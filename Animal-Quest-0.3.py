@@ -1,5 +1,5 @@
 #SWE100 - Intro to Python
-#Louis M. de la Girond'arc
+#L G
 #Final Assignment: Pygame "ANIMAL QUEST" Alpha 0.3
 
 #NOTES:
@@ -8,14 +8,14 @@
 #!!!! HUD functionality
 # Anything listed/printed with brackets [] can be re-coded as string formatting to better address a modular approach.
 # Finish making sprites so I can import and start testing functionality.
+# Find way to call object that a function targets, so it can call its own object? IE interact(self, variable): variable.interact
+# Apparently I am using super.() completely wrong.  Find a way to address this.
 
 import pygame
 
 pygame.init()
 
-#from TileBoard import Board
-#from Tile import Tile
-#from pygame_utilities import draw_text, sign
+#from pygame_utilities import draw_text, sign | Use for printing console to screen?
 
 #Statistics for window dimentions and tile definitions.
 pygame.display.set_caption('Animal Quest ALPHA 0.3')
@@ -59,7 +59,6 @@ def is_adjacent (self, other):
 class Player(pygame.sprite.Sprite):
     adjacent = []
     essence = 0
-    default_layer = 4
     coords = (0, 0)
     def __init__(self, x, y):
         super(Player, self).__init__()
@@ -187,7 +186,7 @@ class Animal(pygame.sprite.Sprite):
         self.rect.centery = self.coords[1] * tile_size + self.rect.height/2
 
     def look(self):
-        if self.index == 0 or self.index == 1:
+        if self.index <= 1:
             print ('You [look] at [a lone stag].')
             if self.greeting == 1:
                 print ('[A lone stag] appears to be mortally injured.  Its wounds are too severe to mend, but perhaps you can still grant some final solace.')
@@ -246,7 +245,7 @@ class Stag(Animal):
 
         if self.adjacent == True:
         
-            if self.index == 0 and self.greeting == 1:
+            if self.greeting == 1:
                 print ('Bleeeergh I am dead!')
                 self.greeting = 0
                 player.essence = 1
