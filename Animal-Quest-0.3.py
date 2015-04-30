@@ -17,6 +17,10 @@
 import pygame
 
 pygame.init()
+pygame.font.init()
+
+title_font = pygame.font.SysFont("courier", 17, False, False)
+console_font = pygame.font.SysFont("courier", 15, False, False)
 
 #from pygame_utilities import draw_text, sign
 
@@ -32,6 +36,11 @@ ui_height = 200
 screen = pygame.display.set_mode([window_width, window_height + ui_height])
 board_width = tile_size * tile_rows
 board_height = tile_size * tile_columns
+background = pygame.Surface(screen.get_size())
+background = background.convert()
+
+background.fill([0, 0, 0])
+screen.blit(background, (0, 0))
 
 #board = Board (TILESIZE, TILESWIDTH, TILESHEIGHT)
 
@@ -50,7 +59,7 @@ def make_sprite(filename):
 
 
 def draw_sprite(sprite):
-    screen.blit(sprite.image, sprite.rect)
+    background.blit(sprite.image, sprite.rect)
 
 
 def board_space(self):
@@ -189,7 +198,6 @@ class Animal(pygame.sprite.Sprite):
     def __init__(self, x, y):
         super(Animal, self).__init__()
         self.images = []
-
         #Add other animal images here! Animal bones for dead animal, or animal sitting/laying?
         self.index = 0
         self.rect = pygame.Rect(0, 0, 32, 32)
@@ -330,6 +338,25 @@ game_sprites_group = pygame.sprite.Group(game_sprites)
 #Dsiplay HUD info @ coords.  Needs specifics still.
 #def display_HUD (x, y):
 
+#Font/String Library, with group...? (For text in text_group...)
+
+#Defines dimensions of the UI!  Use this for placing text within the surface area.
+ui_surface = pygame.Surface((800, 200))
+ui_surface_pos = ui_surface.get_rect()
+ui_surface_pos.x = 0
+ui_surface_pos.y = background.get_rect().bottom - 192
+
+#Need a new surface WITHIN ui_surface for text prints only...???
+test_message = console_font.render("This is a test message!", 0, (255, 255, 255))
+console_pos = test_message.get_rect()
+console_pos.x = ui_surface.get_rect().centerx - 375
+console_pos.y = ui_surface.get_rect().centery - 13
+
+title_text = title_font.render('- - - - - - - - - - - - - - - Animal Quest v 0.3 - - - - - - - - - - - - - - -', 0, (255, 255, 255))
+title_pos = title_text.get_rect()
+title_pos.centerx = ui_surface.get_rect().centerx
+title_pos.centery = ui_surface.get_rect().bottom - 178
+
 
 
 #Runtime loop.
@@ -461,11 +488,15 @@ while runtime:
 
 
     #Graphics
-    screen.fill([0, 0, 0])
 
+    screen.blit(background, (0,0))
     draw_sprite(testboard)
-    draw_sprite(testui)
-    game_sprites_group.draw(screen)
+    background.blit(ui_surface, ui_surface_pos)
+    game_sprites_group.draw(background)
+
+
+    ui_surface.blit(title_text, title_pos)
+    ui_surface.blit(test_message, console_pos)
 
     if cursor in game_sprites_group:
         cursor.blink()
