@@ -1,6 +1,6 @@
 # SWE100 - Intro to Python
 # L G
-#Final Assignment: Pygame "ANIMAL QUEST" Alpha 0.3
+# Final Assignment: Pygame "ANIMAL QUEST"
 
 # NOTES:
 # Player transformations.  HUD Interactivity/drawing/printing to HUD space.
@@ -19,13 +19,14 @@ import pygame
 pygame.init()
 pygame.font.init()
 
-title_font = pygame.font.SysFont("courier", 17, False, False)
-console_font = pygame.font.SysFont("courier", 15, False, False)
+title_font = pygame.font.SysFont("Lucida Console", 17, False, False)
+console_font = pygame.font.SysFont("Lucida Console", 14, False, False)
 
 #from pygame_utilities import draw_text, sign
 
+version = 0.4
 #Statistics for window dimensions and tile definitions.
-pygame.display.set_caption('Animal Quest ALPHA 0.3')
+pygame.display.set_caption('Animal Quest v %s'%version)
 window_width = 800
 window_height = 600
 tile_size = 32
@@ -77,12 +78,14 @@ def is_adjacent(self, other):
     else:
         self.adjacent = False
 
-
 class Player(pygame.sprite.Sprite):
     adjacent = []
     essence = 0
     default_layer = 4
     coords = (0, 0)
+    form_id = 'spirit'
+    ability1 = ('Illuminate')
+    trait = ('Hover')
 
     def __init__(self, x, y):
         super(Player, self).__init__()
@@ -100,35 +103,72 @@ class Player(pygame.sprite.Sprite):
 
         #Player control flag
         self.isactive = True
+        self.call_form()
 
     #"Move" code, used to update sprites on the grid.  Should this be a Global variable???
     def update(self):
         self.rect.centerx = self.coords[0] * tile_size + self.rect.width / 2
         self.rect.centery = self.coords[1] * tile_size + self.rect.height / 2
 
+    def call_form(self):
+        if self.index == 0:
+            self.form_id = ('spirit')
+        elif self.index == 1:
+            self.form_id = ('stag')
+        elif self.index == 2:
+            self.form_id = ('wolf')
+        elif self.index == 3:
+            self.form_id = ('rat')
+
+        if self.form_id == ('spirit'):
+            self.ability1 = ('Illuminate')
+            self.trait = ('Hover')
+        if self.form_id == ('stag'):
+            self.ability1 = ('Carry')
+            self.trait = ('Strength')
+        if self.form_id == ('wolf'):
+            self.ability1 = ('Dig')
+            self.trait = ('Track & Smell')
+        if self.form_id == ('rat'):
+            self.ability1 = ('Sneak')
+            self.trait = ('Small')
+           
+            
     def shift(self):
+        #Will have to manually input line breaks.  string format does not like \n and prints an invalid character in its place.
         if player.essence <= 0:
-            print ('You have no additional essences to [shift] into at this time.')
+            console_scroll('You have no further blessings to manifest and [SHIFT] into at this time.')
             player.isactive = True
         elif player.essence <= 1:
-            print ('[Shift] into which form?\n1: Spirit\n2: Stag')
+            console_scroll('[SHIFT] into which form?\n1: Spirit\n2: Stag')
         elif player.essence <= 2:
-            print ('[Shift] into which form?\n1: Spirit\n2: Stag\n3: Wolf')
+            console_scroll('[SHIFT] into which form?\n1: Spirit\n2: Stag\n3: Wolf')
         elif player.essence >= 3:
-            print ('[Shift] into which form?\n1: Spirit\n2: Stag\n3: Wolf\n4: Rat')
+            console_scroll('[SHIFT] into which form?\n1: Spirit\n2: Stag\n3: Wolf\n4: Rat')
 
+
+        print ('FormID:', player.form_id)
         self.image = self.images[self.index]
 
     #Code Look commands relating to player here.  Probably a way to store commands globally instead of per class.
     def look(self):
-        if self.index == 0:
-            print ('You [look] at an [Aspect of Nature].\nYou glow with a brilliant radiance.')
-        if self.index == 1:
-            print ('You have taken the form of a [stag].\nYou glow with a comforting radiance.')
-        if self.index == 2:
-            print ('You have taken the form of a [wolf].\nYou glow with a comforting radiance.')
-        if self.index == 3:
-            print ('You have taken the form of a [rat].\nYou glow with a comforting radiance.')
+        if self.form_id == ('spirit'):
+            console_scroll ('You are an Aspect of Nature. You glow with a brilliant radiance.')
+            console_scroll ('As a {0}, you can {1} your surroundings and reveal hidden objects or creatures.'.format(self.form_id, self.ability1))
+            console_scroll ('You can also {0} over most terrain.'.format(self.trait))
+        
+        else:
+            console_scroll ('You have invoked the blessing of the {}.'.format(self.form_id))
+
+        if self.form_id == ('stag'):
+            console_scroll ('The {0} can use its {1} to push objects, and can also {2} other animals.'.format(self.form_id, self.trait, self.ability1))
+
+        if self.form_id == ('wolf'):
+            console_scroll ('The {0} can {1} up objects with its paws.'.format(self.form_id, self.ability1))
+            console_scroll ('It can also {0} other creatures and hidden treasure.'.format(self.trait))
+
+        if self.form_id == ('rat'):
+            console_scroll ('The {0} can use its {1} size to squeeze into tight spaces.  It can also {2} by other animals.'.format(self.form_id, self.trait, self.ability1))
 
             #def interact(self, other):
             #if player.interact[1] = animal ### etc, to store ALL player interactions under player for clarity.
@@ -190,6 +230,7 @@ cursor = Cursor(player.coords[0], player.coords[1])
 
 
 class Animal(pygame.sprite.Sprite):
+    form_id = ('animal')
     adjacent = []
     greeting = 1
     coords = (0, 0)
@@ -209,7 +250,7 @@ class Animal(pygame.sprite.Sprite):
         self.rect.centery = self.coords[1] * tile_size + self.rect.height / 2
 
     def look(self):
-        print ('There is an animal here')
+        console_scroll('There is an {} here'.format(self.form_id))
 
 
     def interact(self):
@@ -218,30 +259,20 @@ class Animal(pygame.sprite.Sprite):
         print self.adjacent
 
         if self.adjacent == True:
+            console_scroll('The {} regards you with a benign curiosity.'.format(self.form_id))
 
-            if self.greeting == 1:
-                print ('Bleeeergh I am dead!')
-                self.greeting = 0
-                player.essence = 1
-                self.index = 1
-                self.image = pygame.transform.rotate(self.image, 180)
-                self.update()
-                print (
-                    '''[A lone stag] has entreated its essence as its dying wish.\nYou can now [shift] into a [stag]!''')
-
-            elif self.greeting == 0:
-                print ('This poor creature has passed on to a better place.  There is nothing more you can do.')
 
         elif self.adjacent == False:
-            print ('You are not close enough to interact with this creature.')
+            console_scroll('You are not close enough to interact with the {}.'.format(self.form_id))
 
 
 class Stag(Animal):
+    form_id = ('stag')
     def __init__(self, x, y):
         Animal.__init__(self, x, y)
         self.images = []
+        self.images.append(load_image('npcstagsick.png'))
         self.images.append(load_image('npcstag.png'))
-        self.images.append(load_image('npcstagdead.png'))
         #Add other animal images here! Animal bones for dead animal, or animal sitting/laying?
         self.index = 0
 
@@ -251,13 +282,13 @@ class Stag(Animal):
         print ('Derived class method was called: Stag.')
 
     def look(self):
-        print ('You [look] at [a lone stag].')
+        print ('You [LOOK] at {0}.'.format(self.form_id))
         if self.greeting == 1:
-            print (
-                '[A lone stag] appears to be mortally injured.  Its wounds are too severe to mend, but perhaps you can still grant some final solace.')
+            console_scroll(
+                'The {0} trembles in fear of the darkness around it.  Perhaps you can aid the poor {0}?'.format(self.form_id))
         if self.greeting == 0:
-            print (
-                'The lifeless body of [a lone stag] lays almost peacefully here.  There is nothing more you can do for it.')
+            console_scroll(
+                'The {0} seems to be at ease now.  You have helped cure the {0} of its worry!'.format(self.form_id))
 
 
     def interact(self):
@@ -268,49 +299,56 @@ class Stag(Animal):
         if self.adjacent == True:
 
             if self.index == 0 and self.greeting == 1:
-                print ('Bleeeergh I am dead!')
+                console_scroll('The {0} seems to be at ease now, comforted by the light of your [Illuminate].'.format(self.form_id))
                 self.greeting = 0
                 player.essence = 1
                 self.index = 1
                 self.image = self.images[self.index]
-                self.image = pygame.transform.flip(self.image, False, True)
-                print (
-                    '''[A lone stag] has entreated its essence to you as its dying wish.\nYou can now [shift] into a [stag]!''')
+                console_scroll('In response to your aid, the {0} has entreated its blessing to you.'.format(self.form_id))
+                console_scroll('You can now [shift] into a [stag]!'.format(self.form_id))
 
             elif self.greeting == 0:
-                print ('This poor creature has passed on to a better place.  You have done all you could have to help.')
+                console_scroll('You have already helped the {0}.  The {0} gently bows its head in gratitude.'.format(self.form_id))
 
         elif self.adjacent == False:
-            print ('You are not close enough to interact with this creature.')
+            console_scroll('You are not close enough to interact with the {}.'.format(self.form_id))
 
 
 class Wolf(Animal):
+    form_id = ('wolf')
     def __init__(self, x, y):
         Animal.__init__(self, x, y)
         self.images = []
+        self.images.append(load_image('npcwolfsick.png'))
         self.images.append(load_image('npcwolf.png'))
         self.image = self.images[self.index]
 
         print ('Derived class method was called: Wolf.')
 
     def look(self):
-        print ('You [look] at [a wolf].\nIt is a wolf.')
+        #Wolf cannot move well?  Or code in AI so it paces along the cliff edge, then goes across when the path is created?
+        #Then there is no reason for stag to have carry...  Unless it carries an object, I dunno.
+        console_scroll('You [LOOK] at the {0}. The {0} appears to have wounded its paw and cannot easily move.'.format(self.form_id))
+        console_scroll('The {0} looks longlingly at the rising moon.  If only it could get a better view.'.format(self.form_id))    
 
     def interact(self):
         is_adjacent(self, player)
-        print ('Player is adjacent:'), self.adjacent
-
+        console_scroll('Player is adjacent: {}'.format(self.adjacent))
+        
         if self.adjacent == True:
-            print ('WOLFED')
+            console_scroll('The {0} bows its head in thanks to you, now the {0} can enjoy the view'.format(self.form_id))
             player.essence = 2
-            self.image = pygame.transform.flip(self.image, False, True)
-            print ('''[A wolf] has entreated its essence to you as its dying wish.\nYou can now [shift] into a [wolf]!''')
+            self.index = 1
+            self.image = self.images[self.index]
+            
+            console_scroll('As a token of gratitude, the {0} has entreated its blessing to you.'.format(self.form_id))
+            console_scroll('You can now [SHIFT] into a {}!'.format(self.form_id))
 
         elif self.adjacent == False:
-            print ('You are not close enough to interact with this creature.')
+            console_scroll('You are not close enough to interact with the {}.'.format(self.form_id))
 
 
-creature = [Wolf (8, 12), Stag (12, 8)]
+creature = [Wolf(8, 12), Stag(12, 8)]
 creature_group = pygame.sprite.Group(creature)
 
 #Movement library
@@ -346,24 +384,60 @@ ui_surface_pos = ui_surface.get_rect()
 ui_surface_pos.x = 0
 ui_surface_pos.y = background.get_rect().bottom - 192
 
-#Need a new surface WITHIN ui_surface for text prints only...???
-test_message = console_font.render("This is a test message!", 0, (255, 255, 255))
-console_pos = test_message.get_rect()
-console_pos.x = ui_surface.get_rect().centerx - 375
-console_pos.y = ui_surface.get_rect().centery - 13
+#array for console line buffer
+console_lines = []
 
-title_text = title_font.render('- - - - - - - - - - - - - - - Animal Quest v 0.3 - - - - - - - - - - - - - - -', 0, (255, 255, 255))
-title_pos = title_text.get_rect()
-title_pos.centerx = ui_surface.get_rect().centerx
-title_pos.centery = ui_surface.get_rect().bottom - 178
+def console_scroll(string):
+    max_lines = 5
+    console_lines.append(string)
 
+    while len (console_lines) > max_lines:
+        console_lines.pop(0)
+
+#This space is for printing UI text!
+def update_UI():
+
+    ui_surface.fill((0, 0, 0,))
+
+    y_offset = 0
+
+    for line in console_lines:
+        
+        test_message = console_font.render(line, 0, (255, 255, 255))
+        console_pos = test_message.get_rect()
+        console_pos.x = ui_surface.get_rect().left + 25
+        console_pos.y = ui_surface.get_rect().top + 85 + y_offset
+
+        ui_surface.blit(test_message, console_pos)
+
+        y_offset += 15
+
+    #Positioning and data for the UI header
+    title_text = title_font.render(
+        '''- - - - - - - - - - - - - - - Animal Quest v %s - - - - - - - - - - - - - - -'''%version, 0,(255, 255, 255))
+    title_pos = title_text.get_rect()
+    title_pos.centerx = ui_surface.get_rect().centerx
+    title_pos.centery = ui_surface.get_rect().bottom - 178
+
+    #These are the global actions, they do not change based on player form.
+    ui_actions01 = console_font.render(
+        '''[a] Look  [s] Interact  [d] Shift     |     ''' +'[z] {0}  [Trait] {1}'.format(player.ability1, player.trait), 0, (255, 255, 255))
+    ui_actions01_pos = ui_actions01.get_rect()
+    ui_actions01_pos.x = +85
+    ui_actions01_pos.centery = ui_surface.get_rect().top + 50
+
+    #Draws text on screen
+    ui_surface.blit(title_text, title_pos)
+    ui_surface.blit(ui_actions01, ui_actions01_pos) 
+    background.blit(ui_surface, ui_surface_pos)
+    screen.blit(background, (0, 0))
 
 
 #Runtime loop.
 runtime = True
 while runtime:
 
-    for ev in pygame.event.get():
+    for ev in pygame.event.get():      
         #Quits on window close or Esc keypress.
         if (ev.type == pygame.QUIT or
                         ev.type == pygame.KEYDOWN and ev.key == pygame.K_ESCAPE):
@@ -384,7 +458,7 @@ while runtime:
                         cursor.coords = (column, row)
                         cursor.update()
                     #Debug Coordinates Printed to Console
-                    print 'Cursor moved to:', cursor.coords
+                    print ('Cursor moved to: {}'.format(cursor.coords))
                 if ev.type == pygame.KEYDOWN and ev.key == pygame.K_a:
                     #Should I load in ALL "looks" here?  Seems like the best thing would be to have interacts stored in classes/different objects...
                     #Ideally all "[ACTIONS]" and [OBJECTS] can be handled by scripting.
@@ -400,7 +474,7 @@ while runtime:
                         if creaturecollision:
                             animalfetch.look()
                         else:
-                            print ('There is nothing to look at here.')
+                            console_scroll('There is nothing to look at here.')
                     cursor.off()
 
                 if ev.type == pygame.KEYDOWN and ev.key == pygame.K_s:
@@ -415,7 +489,7 @@ while runtime:
                         animalfetch.interact()
 
                     else:
-                        print ('There is nothing to interact with here.')
+                        console_scroll('There is nothing to interact with here.')
 
                     cursor.off()
 
@@ -423,21 +497,26 @@ while runtime:
             #SHIFT action form changes here
             if not cursor.alive():
                 if ev.type == pygame.KEYDOWN and ev.key == pygame.K_1 and player.essence >= 0:
-                    print ('You [shift] into the form of a [spirit].')
                     player.index = 0
+                    player.call_form()
                     player.shift()
+                    console_scroll('You [SHIFT] into the form of a {}.'.format(player.form_id))
                     player.isactive = True
+                    
                 if ev.type == pygame.KEYDOWN and ev.key == pygame.K_2 and player.essence >= 1:
-                    print ('You [shift] into the form of a [stag].')
                     player.index = 1
+                    player.call_form()
                     player.shift()
+                    console_scroll('You [SHIFT] into the form of a {}.'.format(player.form_id))
                     player.isactive = True
-                if ev.type == pygame.KEYDOWN and ev.key == pygame.K_3 and player. essence >= 2:
-                    print ('You [shift] into the form of a [wolf].')
+                    
+                if ev.type == pygame.KEYDOWN and ev.key == pygame.K_3 and player.essence >= 2:
                     player.index = 2
+                    player.call_form()
                     player.shift()
+                    console_scroll('You [SHIFT] into the form of a {}.'.format(player.form_id))
                     player.isactive = True
-
+                    
 
         #If player has control of avatar NORMAL ACTIONS HERE
         elif player.isactive:
@@ -462,12 +541,15 @@ while runtime:
                         player.update()
 
                     #Debug Coordinates Printed to Console              
-                    print 'Player moved to:', player_newCoords
-                    print 'Player is on board:', board_space(player)
+                    print('Player moved to: {}'.format(player_newCoords))
+                    print('Player is on board: {}'.format(board_space(player)))
 
                     #Spawns and sets "Cursor Mode"
                 if ev.type == pygame.KEYDOWN and ev.key in cursor_keys:
-                    print ('Target what you wish to interact with, then press the appropriate interaction key.')
+                    if ev.key == pygame.K_a:
+                        console_scroll('Look at what?')
+                    if ev.key == pygame.K_s:
+                        console_scroll('Interact with what?')
                     #cursor function to draw cursor trigger
                     cursor.on()
 
@@ -489,25 +571,15 @@ while runtime:
 
     #Graphics
 
-    screen.blit(background, (0,0))
+    screen.blit(background, (0, 0))
     draw_sprite(testboard)
     background.blit(ui_surface, ui_surface_pos)
     game_sprites_group.draw(background)
 
-
-    ui_surface.blit(title_text, title_pos)
-    ui_surface.blit(test_message, console_pos)
+    update_UI()
 
     if cursor in game_sprites_group:
         cursor.blink()
-
-    #draw playmap and HUD
-    #display_HUD (TILESWIDTH + 5, 5)
-
-    #UI DRAWS, LINK TO ONLY DRAW/SHOW ON CERTAIN INPUTS
-    #UI DEBUG
-    #UI_group.update()
-    #UI_group.draw(screen)
 
     pygame.display.flip()
     pygame.time.wait(30)
