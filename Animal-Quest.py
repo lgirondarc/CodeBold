@@ -83,7 +83,7 @@ class Player(pygame.sprite.Sprite):
     essence = 0
     default_layer = 4
     coords = (0, 0)
-    form_id = 'spirit'
+    form_id = ('spirit')
     ability1 = ('Illuminate')
     trait = ('Hover')
 
@@ -213,17 +213,17 @@ class Cursor(pygame.sprite.Sprite):  #ADD DRAW CONDITIONS WHEN PLAYER PRESSES KE
         cursor.coords = player.coords
         cursor.add(game_sprites_group)
         player.isactive = False
-        print 'Active:', player.isactive
-        print 'Cursor spawn at:', cursor.coords
-        print 'Cursor Toggle:', cursor in game_sprites_group
+        print ('Active:', player.isactive)
+        print ('Cursor spawn at:', cursor.coords)
+        print ('Cursor Toggle:', cursor.alive())
 
     def off(self):
         cursor.kill()
         cursor.counter = 0
         cursor.index = 0
         player.isactive = True
-        print 'Active:', player.isactive
-        print 'Cursor Mode:', cursor in game_sprites_group
+        print ('Active:', player.isactive)
+        print ('Cursor Mode:', cursor.alive())
 
 
 cursor = Cursor(player.coords[0], player.coords[1])
@@ -282,7 +282,7 @@ class Stag(Animal):
         print ('Derived class method was called: Stag.')
 
     def look(self):
-        print ('You [LOOK] at {0}.'.format(self.form_id))
+        console_scroll ('You look at {0}.'.format(self.form_id))
         if self.greeting == 1:
             console_scroll(
                 'The {0} trembles in fear of the darkness around it.  Perhaps you can aid the poor {0}?'.format(self.form_id))
@@ -329,7 +329,7 @@ class Wolf(Animal):
         #Wolf cannot move well?  Or code in AI so it paces along the cliff edge, then goes across when the path is created?
         #Then there is no reason for stag to have carry...  Unless it carries an object, I dunno.
         console_scroll('You [LOOK] at the {0}. The {0} appears to have wounded its paw and cannot easily move.'.format(self.form_id))
-        console_scroll('The {0} looks longlingly at the rising moon.  If only it could get a better view.'.format(self.form_id))    
+        console_scroll('The {0} looks longingly at the rising moon.  If only it could get a better view.'.format(self.form_id))
 
     def interact(self):
         is_adjacent(self, player)
@@ -365,7 +365,6 @@ cursor_keys = [pygame.K_a, pygame.K_s]
 
 #Test Board and HUD stuff
 testboard = make_sprite('grid.png')
-testui = make_sprite('testUI.png')
 
 UI_sprites = Cursor(player.coords[0], player.coords[1])
 UI_group = pygame.sprite.Group(UI_sprites)
@@ -403,14 +402,14 @@ def update_UI():
 
     for line in console_lines:
         
-        test_message = console_font.render(line, 0, (255, 255, 255))
-        console_pos = test_message.get_rect()
+        console_text = console_font.render(line, 0, (255, 255, 255))
+        console_pos = console_text.get_rect()
         console_pos.x = ui_surface.get_rect().left + 25
         console_pos.y = ui_surface.get_rect().top + 85 + y_offset
 
-        ui_surface.blit(test_message, console_pos)
+        ui_surface.blit(console_text, console_pos)
 
-        y_offset += 15
+        y_offset += 16
 
     #Positioning and data for the UI header
     title_text = title_font.render(
@@ -421,7 +420,8 @@ def update_UI():
 
     #These are the global actions, they do not change based on player form.
     ui_actions01 = console_font.render(
-        '''[a] Look  [s] Interact  [d] Shift     |     ''' +'[z] {0}  [Trait] {1}'.format(player.ability1, player.trait), 0, (255, 255, 255))
+        '''[a] Look  [s] Interact  [d] Shift     |     ''' +'[z] {0}  [Trait] {1}'.format(
+            player.ability1, player.trait), 0, (255, 255, 255))
     ui_actions01_pos = ui_actions01.get_rect()
     ui_actions01_pos.x = +85
     ui_actions01_pos.centery = ui_surface.get_rect().top + 50
