@@ -325,8 +325,10 @@ class player_ability(pygame.sprite.Sprite):
         print ('Base class method was called: Ability')
 
     def update(self):
+        self.coords = player.coords
         self.rect.centerx = player.coords[0] * tile_size + self.rect.width / 2
         self.rect.centery = player.coords[1] * tile_size + self.rect.height / 2
+        print (self.coords[0], self.coords[1])
 
     def on(self, x, y):
         self.add(game_sprites_group)
@@ -362,6 +364,7 @@ class Illuminate(player_ability):
                 except:
                     return
 
+#--- Critter classes here! ---
 
 class Animal(pygame.sprite.Sprite):
     flag_illuminate = False
@@ -788,7 +791,6 @@ while runtime:
         #Updates sprite positions on grid.  Main loop, otherwise sprites spawn at (0, 0) and snap later.
         player.update()
         illuminate.update()
-        print illuminate.update()
 
         try:
             if illuminate in ability_group:
