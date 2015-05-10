@@ -83,11 +83,11 @@ def is_adjacent(self, other):
 
 
 class Player(pygame.sprite.Sprite):
-    default_layer = 4
+    default_layer = 5
     inventory = []
     essence = ['spirit']
     coords = (0, 0)
-    form_id = ('spirit')
+    base_id = ('spirit')
     ability1 = ('Illuminate')
     trait = ('Hover')
 
@@ -115,26 +115,26 @@ class Player(pygame.sprite.Sprite):
         self.rect.centery = self.coords[1] * tile_size + self.rect.height / 2
 
     def call_form(self):
-        #Calls Form_ID and set appropriate sprite and form_id value for other functions to use.
-        if self.form_id == ('spirit'):
+        #Calls base_id and set appropriate sprite and base_id value for other functions to use.
+        if self.base_id == ('spirit'):
             self.index = 0
-        elif self.form_id == ('stag'):
+        elif self.base_id == ('stag'):
             self.index = 1
-        elif self.form_id == ('wolf'):
+        elif self.base_id == ('wolf'):
             self.index = 2
-        elif self.form_id == ('rat'):
+        elif self.base_id == ('rat'):
             self.index = 3
 
-        if self.form_id == ('spirit'):
+        if self.base_id == ('spirit'):
             self.ability1 = ('Illuminate')
             self.trait = ('Hover')
-        if self.form_id == ('stag'):
+        if self.base_id == ('stag'):
             self.ability1 = ('Carry')
             self.trait = ('Strength')
-        if self.form_id == ('wolf'):
+        if self.base_id == ('wolf'):
             self.ability1 = ('Dig')
             self.trait = ('Track & Smell')
-        if self.form_id == ('rat'):
+        if self.base_id == ('rat'):
             self.ability1 = ('Sneak')
             self.trait = ('Small')
 
@@ -158,34 +158,34 @@ class Player(pygame.sprite.Sprite):
             console_scroll('1: {0} 2: {1} 3: {2} 4: {3}'.format(player.essence[0], player.essence[1], player.essence[2],
                                                                 player.essence[3]))
 
-        print ('FormID:', player.form_id)
+        print ('FormID:', player.base_id)
 
     #Look interactions to call on when player is targeted with "look"
     def look(self):
-        if self.form_id == ('spirit'):
+        if self.base_id == ('spirit'):
             console_scroll('You are an Aspect of Nature. You glow with a brilliant radiance.')
             console_scroll(
-                'As a {0}, you can {1} your surroundings and reveal hidden objects or creatures.'.format(self.form_id,
+                'As a {0}, you can {1} your surroundings and reveal hidden objects or creatures.'.format(self.base_id,
                                                                                                          self.ability1))
             console_scroll('You can also {0} over most terrain.'.format(self.trait))
 
         else:
-            console_scroll('You have invoked the blessing of the {0}.'.format(self.form_id))
+            console_scroll('You have invoked the blessing of the {0}.'.format(self.base_id))
 
-        if self.form_id == ('stag'):
+        if self.base_id == ('stag'):
             console_scroll(
-                'The {0} can use its {1} to push objects, and can also {2} other animals.'.format(self.form_id,
+                'The {0} can use its {1} to push objects, and can also {2} other animals.'.format(self.base_id,
                                                                                                   self.trait,
                                                                                                   self.ability1))
 
-        if self.form_id == ('wolf'):
-            console_scroll('The {0} can {1} up objects with its paws.'.format(self.form_id, self.ability1))
+        if self.base_id == ('wolf'):
+            console_scroll('The {0} can {1} up objects with its paws.'.format(self.base_id, self.ability1))
             console_scroll('It can also {0} other creatures and hidden treasure.'.format(self.trait))
 
-        if self.form_id == ('rat'):
+        if self.base_id == ('rat'):
             console_scroll(
                 'The {0} can use its {1} size to squeeze into tight spaces.  It can also {2} by other animals.'.format(
-                    self.form_id, self.trait, self.ability1))
+                    self.base_id, self.trait, self.ability1))
 
 #Spawns instance of player on board.  Must come before Cursor since Cursor uses player.coords to find location to spawn at.
 player = Player(12, 11)
@@ -193,7 +193,7 @@ player = Player(12, 11)
 #Item Base class that all items will derive from.
 class Item(pygame.sprite.Sprite):
     default_layer = 2
-    form_id = 'item'
+    base_id = ('item')
     coords = (0, 0)
 
     def __init__(self, x, y):
@@ -205,7 +205,7 @@ class Item(pygame.sprite.Sprite):
         print ('Base class method was called: Item')
 
     def look(self):
-        console_scroll('There is an {} here'.format(self.form_id))
+        console_scroll('There is an {} here'.format(self.base_id))
 
 
     def interact(self):
@@ -213,16 +213,16 @@ class Item(pygame.sprite.Sprite):
         is_adjacent(self, player)
 
         if is_adjacent(self, player):
-            console_scroll('You pick up the {}.'.format(self.form_id))
+            console_scroll('You pick up the {}.'.format(self.base_id))
             player.inventory.append('ITEM_BASECLASS')
             self.kill()
 
         elif not is_adjacent(self, player):
-            console_scroll('You are not close enough to pick up the {}.'.format(self.form_id))
+            console_scroll('You are not close enough to pick up the {}.'.format(self.base_id))
 
 
 class Food(Item):
-    form_id = 'Food'
+    base_id = ('Food')
 
     def __init__(self, x, y):
         Item.__init__(self, x, y)
@@ -239,7 +239,7 @@ class Food(Item):
         self.rect.centery = self.coords[1] * tile_size + self.rect.height / 2
 
     def look(self):
-        console_scroll('There is {0} here.  It looks delicious.'.format(self.form_id))
+        console_scroll('There is {0} here.  It looks delicious.'.format(self.base_id))
 
 
     def interact(self):
@@ -247,15 +247,15 @@ class Food(Item):
         is_adjacent(self, player)
 
         if is_adjacent(self, player):
-            console_scroll('You pick up the {}.'.format(self.form_id))
+            console_scroll('You pick up the {}.'.format(self.base_id))
             player.inventory.append('food')
             self.kill()
 
 
         elif not is_adjacent(self, player):
-            console_scroll('You are not close enough to pick up the {}.'.format(self.form_id))
+            console_scroll('You are not close enough to pick up the {}.'.format(self.base_id))
 
-    def appear(self, x, y):
+    def place(self, x, y):
         self.add(pawn_group)
         self.coords = (x, y)
         self.add(game_sprites_group)
@@ -265,7 +265,7 @@ class Food(Item):
 
 
 class Cursor(pygame.sprite.Sprite):
-    coords = (player.coords)
+    coords = (player.coords[0], player.coords[1])
     default_layer = 5
     def __init__(self, x, y):
         super(Cursor, self).__init__()
@@ -311,9 +311,61 @@ class Cursor(pygame.sprite.Sprite):
         print ('Cursor Mode:', cursor.alive())
 
 
-class Animal(pygame.sprite.Sprite):
+#--- Ability Classes Here ---
+
+class player_ability(pygame.sprite.Sprite):
+    base_id = ('player_ability')
     default_layer = 4
-    form_id = ('animal')
+    coords = (0, 0)
+
+    def __init__(self, x, y):
+        self.coords = (x, y)
+        print ('Base class method was called: Ability')
+
+    def update(self):
+        self.rect.centerx = self.coords[0] * tile_size + self.rect.width / 2
+        self.rect.centery = self.coords[1] * tile_size + self.rect.height / 2
+
+    def on(self, x, y):
+        self.add(pawn_group)
+        self.coords = (x, y)
+        self.add(game_sprites_group)
+        self.update()
+        print ('ability.on called')
+
+    def off(self):
+        player_ability.kill()
+        player_ability.isactive = True
+        print ('Active:', player.isactive)
+
+class Illuminate(player_ability):
+    base_id = ('illuminate')
+    coords = (player.coords[0], player.coords[1])
+    ability_range = 3
+
+    def __init__(self, x, y):
+        player_ability.__init__(self, x, y)
+        self.image = load_image('ability_illuminate.png')
+        self.rect = self.image.get_rect()
+
+    def in_range(self, other):
+        if (abs(self.coords[0] - other.coords[0]) + abs(self.coords[1] - other.coords[1]) <= self.ability_range):
+            return True
+
+    def trigger(self, other):
+        if self.in_range(self, other):
+            try:
+                other.illuminate = True
+                print ('[0].illuminate: [1]'.format(other, other.illuminate))
+            except:
+                return
+
+
+
+class Animal(pygame.sprite.Sprite):
+    illuminate = False
+    default_layer = 4
+    base_id = ('animal')
     greeting = 0
     coords = (0, 0)
 
@@ -330,7 +382,7 @@ class Animal(pygame.sprite.Sprite):
         self.rect.centery = self.coords[1] * tile_size + self.rect.height / 2
 
     def look(self):
-        console_scroll('There is an {} here'.format(self.form_id))
+        console_scroll('There is an {} here'.format(self.base_id))
 
 
     def interact(self):
@@ -338,15 +390,15 @@ class Animal(pygame.sprite.Sprite):
         is_adjacent(self, player)
 
         if is_adjacent(self, player):
-            console_scroll('The {} regards you with a benign curiosity.'.format(self.form_id))
+            console_scroll('The {} regards you with a benign curiosity.'.format(self.base_id))
 
 
         elif not is_adjacent(self, player):
-            console_scroll('You are not close enough to interact with the {}.'.format(self.form_id))
+            console_scroll('You are not close enough to interact with the {}.'.format(self.base_id))
 
 
 class Stag(Animal):
-    form_id = ('stag')
+    base_id = ('stag')
 
     def __init__(self, x, y):
         Animal.__init__(self, x, y)
@@ -361,14 +413,14 @@ class Stag(Animal):
         print ('Derived class method was called: Stag.')
 
     def look(self):
-        console_scroll('You look at {0}.'.format(self.form_id))
+        console_scroll('You look at {0}.'.format(self.base_id))
         if self.greeting == 0:
             console_scroll(
                 'The {0} trembles in fear of the darkness around it.  Perhaps you can aid the poor {0}?'.format(
-                    self.form_id))
+                    self.base_id))
         if self.greeting == 1:
             console_scroll(
-                'The {0} seems to be at ease now.  You have helped cure the {0} of its worry!'.format(self.form_id))
+                'The {0} seems to be at ease now.  You have helped cure the {0} of its worry!'.format(self.base_id))
 
 
     def interact(self):
@@ -378,25 +430,25 @@ class Stag(Animal):
 
             if self.greeting == 0:
                 console_scroll('The {0} seems to be at ease now, comforted by the light of your [Illuminate].'.format(
-                    self.form_id))
+                    self.base_id))
                 self.greeting = 1
                 self.index = 1
                 self.image = self.images[self.index]
                 player.essence.append('stag')
                 console_scroll(
-                    'In response to your aid, the {0} has entreated its blessing to you.'.format(self.form_id))
-                console_scroll('You can now invoke the aspect of the [stag]!'.format(self.form_id))
+                    'In response to your aid, the {0} has entreated its blessing to you.'.format(self.base_id))
+                console_scroll('You can now invoke the aspect of the [stag]!'.format(self.base_id))
 
             elif self.greeting == 1:
                 console_scroll(
-                    'You have already helped the {0}.  The {0} gently bows its head in gratitude.'.format(self.form_id))
+                    'You have already helped the {0}.  The {0} gently bows its head in gratitude.'.format(self.base_id))
 
         elif not is_adjacent(self, player):
-            console_scroll('You are not close enough to interact with the {}.'.format(self.form_id))
+            console_scroll('You are not close enough to interact with the {}.'.format(self.base_id))
 
 
 class Wolf(Animal):
-    form_id = ('wolf')
+    base_id = ('wolf')
 
     def __init__(self, x, y):
         Animal.__init__(self, x, y)
@@ -411,12 +463,12 @@ class Wolf(Animal):
         if self.index == 0:
             console_scroll(
                 'You look at the {0}. The {0} appears to have wounded its paw and cannot easily move.'.format(
-                    self.form_id))
+                    self.base_id))
             console_scroll(
-                'The {0} looks longingly at the rising moon.  If only it could get a better view.'.format(self.form_id))
+                'The {0} looks longingly at the rising moon.  If only it could get a better view.'.format(self.base_id))
 
         if self.index == 1:
-            console_scroll('The {0} seems to be much happier now that it can watch the moon rise!'.format(self.form_id))
+            console_scroll('The {0} seems to be much happier now that it can watch the moon rise!'.format(self.base_id))
 
     def interact(self):
         is_adjacent(self, player)
@@ -426,32 +478,32 @@ class Wolf(Animal):
 
             if self.greeting == 0:
                 console_scroll(
-                    'The {0} bows its head in thanks to you, now the {0} can enjoy the view'.format(self.form_id))
+                    'The {0} bows its head in thanks to you, now the {0} can enjoy the view'.format(self.base_id))
                 self.greeting = 1
                 self.index = 1
                 self.image = self.images[self.index]
                 player.essence.append('wolf')
 
-                console_scroll('As a token of gratitude, the {0} has entreated its blessing to you.'.format(self.form_id))
-                console_scroll('You can now invoke the aspect of the {0}!'.format(self.form_id))
+                console_scroll('As a token of gratitude, the {0} has entreated its blessing to you.'.format(self.base_id))
+                console_scroll('You can now invoke the aspect of the {0}!'.format(self.base_id))
 
             elif self.greeting == 1:
                 console_scroll(
                     'In thanks for your help, the {0} also informs you of some food it has buried nearby.'.format(
-                        self.form_id))
-                food.appear(4, 4)
+                        self.base_id))
+                food.place(4, 4)
                 self.greeting = 2
 
             elif self.greeting == 2:
-                console_scroll('You have already helped the {0}.  The {0} bows its head in gratitude.'.format(self.form_id))
+                console_scroll('You have already helped the {0}.  The {0} bows its head in gratitude.'.format(self.base_id))
 
         elif not is_adjacent(self, player):
-            console_scroll('You are not close enough to interact with the {0}.'.format(self.form_id))
+            console_scroll('You are not close enough to interact with the {0}.'.format(self.base_id))
 
 
 
 class Rat(Animal):
-    form_id = ('rat')
+    base_id = ('rat')
 
     def __init__(self, x, y):
         Animal.__init__(self, x, y)
@@ -460,14 +512,14 @@ class Rat(Animal):
         self.images.append(load_image('npcrat.png'))
         self.image = self.images[self.index]
 
-        print ('Derived class method was called: {0}.'.format(self.form_id))
+        print ('Derived class method was called: {0}.'.format(self.base_id))
 
     def look(self):
         if self.index == 0:
             console_scroll(
-                'You look at the {0}. The {0} looks very hungry, but cannot find any food.'.format(self.form_id))
+                'You look at the {0}. The {0} looks very hungry, but cannot find any food.'.format(self.base_id))
         elif self.index == 1:
-            console_scroll('The {0} seems satisfied by its meal and is healthy again!'.format(self.form_id))
+            console_scroll('The {0} seems satisfied by its meal and is healthy again!'.format(self.base_id))
 
     def interact(self):
         is_adjacent(self, player)
@@ -478,27 +530,27 @@ class Rat(Animal):
                 if 'food' in player.inventory:
                         console_scroll(
                             'The {0} eagerly accepts the offering of food and scarfs it down hungrily'.format(
-                                self.form_id))
+                                self.base_id))
                         self.index = 1
                         self.image = self.images[self.index]
                         player.essence.append('rat')
                         player.inventory.remove('food')
                         self.greeting = 1
                         console_scroll(
-                            'As a token of gratitude, the {0} has entreated its blessing to you.'.format(self.form_id))
-                        console_scroll('You can now invoke the aspect of the {0}!'.format(self.form_id))
+                            'As a token of gratitude, the {0} has entreated its blessing to you.'.format(self.base_id))
+                        console_scroll('You can now invoke the aspect of the {0}!'.format(self.base_id))
 
                 elif 'food' not in player.inventory:
                     console_scroll(
                         'The {0} looks at you weakly.  Food could help this poor {0} regain its strength.'.format(
-                            self.form_id))
+                            self.base_id))
 
             elif self.greeting == 1:
                 console_scroll('You have already helped the {0}.  The {0} bows its head in gratitude.'.format(
-                    self.form_id))
+                    self.base_id))
 
         elif not is_adjacent(self, player):
-                console_scroll('You are not close enough to interact with the {0}.'.format(self.form_id))
+                console_scroll('You are not close enough to interact with the {0}.'.format(self.base_id))
 
 #Instances of non-player objects
 
@@ -651,27 +703,27 @@ while runtime:
 
                 #Conditionals for form changing.  Checks number of blessings in list and then adjusts accordingly.
                 if ev.type == pygame.KEYDOWN and ev.key == pygame.K_1 and len(player.essence) >= 1:
-                    player.form_id = ('{0}'.format(player.essence[0]))
+                    player.base_id = ('{0}'.format(player.essence[0]))
                     player.call_form()
-                    console_scroll('You invoke the aspect of the {0}.'.format(player.form_id))
+                    console_scroll('You invoke the aspect of the {0}.'.format(player.base_id))
                     player.isactive = True
 
                 elif ev.type == pygame.KEYDOWN and ev.key == pygame.K_2 and len(player.essence) >= 2:
-                    player.form_id = ('{0}'.format(player.essence[1]))
+                    player.base_id = ('{0}'.format(player.essence[1]))
                     player.call_form()
-                    console_scroll('You invoke the aspect of the {0}.'.format(player.form_id))
+                    console_scroll('You invoke the aspect of the {0}.'.format(player.base_id))
                     player.isactive = True
 
                 elif ev.type == pygame.KEYDOWN and ev.key == pygame.K_3 and len(player.essence) >= 3:
-                    player.form_id = ('{0}'.format(player.essence[2]))
+                    player.base_id = ('{0}'.format(player.essence[2]))
                     player.call_form()
-                    console_scroll('You invoke the aspect of the {0}.'.format(player.form_id))
+                    console_scroll('You invoke the aspect of the {0}.'.format(player.base_id))
                     player.isactive = True
 
                 elif ev.type == pygame.KEYDOWN and ev.key == pygame.K_4 and len(player.essence) >= 4:
-                    player.form_id = ('{0}'.format(player.essence[3]))
+                    player.base_id = ('{0}'.format(player.essence[3]))
                     player.call_form()
-                    console_scroll('You invoke the aspect of the {0}.'.format(player.form_id))
+                    console_scroll('You invoke the aspect of the {0}.'.format(player.base_id))
                     player.isactive = True
 
 
@@ -720,6 +772,11 @@ while runtime:
                     #Triggers invoke prompt
                     player.isactive = False
                     player.invoke()
+
+                if ev.type == pygame.KEYDOWN and ev. key == pygame.K_g:
+                    if player.base_id == ('spirit'):
+                        illuminate = Illuminate(player.coords[0], player.coords[1])
+                        illuminate.on(player.coords[0], player.coords[1])
 
 
 
