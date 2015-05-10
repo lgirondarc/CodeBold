@@ -319,6 +319,7 @@ class player_ability(pygame.sprite.Sprite):
     coords = (0, 0)
 
     def __init__(self, x, y):
+        super(player_ability, self).__init__()
         self.coords = (x, y)
         print ('Base class method was called: Ability')
 
@@ -327,16 +328,13 @@ class player_ability(pygame.sprite.Sprite):
         self.rect.centery = self.coords[1] * tile_size + self.rect.height / 2
 
     def on(self, x, y):
-        self.add(pawn_group)
-        self.coords = (x, y)
         self.add(game_sprites_group)
+        self.add(ability_group)
         self.update()
         print ('ability.on called')
 
     def off(self):
         player_ability.kill()
-        player_ability.isactive = True
-        print ('Active:', player.isactive)
 
 class Illuminate(player_ability):
     base_id = ('illuminate')
@@ -347,23 +345,25 @@ class Illuminate(player_ability):
         player_ability.__init__(self, x, y)
         self.image = load_image('ability_illuminate.png')
         self.rect = self.image.get_rect()
+        self.coords = (player.coords[0], player.coords[1])
 
     def in_range(self, other):
         if (abs(self.coords[0] - other.coords[0]) + abs(self.coords[1] - other.coords[1]) <= self.ability_range):
             return True
 
     def trigger(self, other):
-        if self.in_range(self, other):
-            try:
-                other.illuminate = True
-                print ('[0].illuminate: [1]'.format(other, other.illuminate))
-            except:
-                return
+        if illuminate.alive():
+            if self.in_range(self, other):
+                try:
+                    other.flag_illuminate = True
+                    print ('[0].illuminate: [1]'.format(other, other.flag_illuminate))
+                except:
+                    return
 
 
 
 class Animal(pygame.sprite.Sprite):
-    illuminate = False
+    flag_illuminate = False
     default_layer = 4
     base_id = ('animal')
     greeting = 0
@@ -554,6 +554,8 @@ class Rat(Animal):
 
 #Instances of non-player objects
 
+illuminate = Illuminate(player.coords[0], player.coords[1])
+
 cursor = Cursor(player.coords[0], player.coords[1])
 
 food = Food(Food.coords[0], Food.coords[1])
@@ -561,6 +563,9 @@ food = Food(Food.coords[0], Food.coords[1])
 pawn = [Wolf(8, 12), Stag(12, 8), Rat(16, 12)]
 
 pawn_group = pygame.sprite.Group(pawn)
+
+#Array to funnel and kill all ability functions
+ability_group = []
 
 
 #Movement library
@@ -775,14 +780,23 @@ while runtime:
 
                 if ev.type == pygame.KEYDOWN and ev. key == pygame.K_g:
                     if player.base_id == ('spirit'):
-                        illuminate = Illuminate(player.coords[0], player.coords[1])
                         illuminate.on(player.coords[0], player.coords[1])
 
 
 
         #Updates sprite positions on grid.  Main loop, otherwise sprites spawn at (0, 0) and snap later.
         player.update()
-        cursor.update()
+        illuminate.update()
+
+        try:
+            if illuminate in ability_group:
+                illuminate.update()
+
+        except:
+            pass
+
+        if cursor in game_sprites_group:
+            cursor.update()
 
         for pawn in pawn_group:
             pawn.update()
