@@ -321,11 +321,12 @@ class player_ability(pygame.sprite.Sprite):
     def __init__(self, x, y):
         super(player_ability, self).__init__()
         self.coords = (x, y)
+        self.rect = pygame.Rect(0, 0, 32, 32)
         print ('Base class method was called: Ability')
 
     def update(self):
-        self.rect.centerx = self.coords[0] * tile_size + self.rect.width / 2
-        self.rect.centery = self.coords[1] * tile_size + self.rect.height / 2
+        self.rect.centerx = player.coords[0] * tile_size + self.rect.width / 2
+        self.rect.centery = player.coords[1] * tile_size + self.rect.height / 2
 
     def on(self, x, y):
         self.add(game_sprites_group)
@@ -346,6 +347,7 @@ class Illuminate(player_ability):
         self.image = load_image('ability_illuminate.png')
         self.rect = self.image.get_rect()
         self.coords = (player.coords[0], player.coords[1])
+        print self.rect.width, self.rect.height
 
     def in_range(self, other):
         if (abs(self.coords[0] - other.coords[0]) + abs(self.coords[1] - other.coords[1]) <= self.ability_range):
@@ -359,7 +361,6 @@ class Illuminate(player_ability):
                     print ('[0].illuminate: [1]'.format(other, other.flag_illuminate))
                 except:
                     return
-
 
 
 class Animal(pygame.sprite.Sprite):
@@ -787,6 +788,7 @@ while runtime:
         #Updates sprite positions on grid.  Main loop, otherwise sprites spawn at (0, 0) and snap later.
         player.update()
         illuminate.update()
+        print illuminate.update()
 
         try:
             if illuminate in ability_group:
