@@ -3,33 +3,28 @@
 # Final Assignment: Pygame "ANIMAL QUEST"
 
 # NOTES:
-# !! Find a way to layer sprites on the grid, so you can always have player/animals render on top of other things, like abilities and items...?
-# All animals are currently already placed on the grid at the start, so it avoids this issue.  HOWEVER, adding an item to a list??
-# !! Code in animal abilities and functionalities
+
+# !!! Code in animal abilities and functionalities
 # !! Add proper comments in code to explain what blocks of code do
 # DONE !! Replace "index <=" essence value with an array for dynamic aquiring.
 # DONE !! How to spawn food item on demand?  Also would work with how to spawn any object??  Hook into "Pawn" function if possible...
+# DONE OrderedUpdates() > DefaultLayer allows for sprite layers within a group.
 
 # Ideally, Item/Player/Animal and any other board object can stem from a common "Pawn" base class...
 # I tried to do this but it caused a lot of problems.  Something to look into for future refinement.
 
 # Map design and coding.  How to organize 'level designs'?
-# Anything listed/printed with brackets [] can be re-coded as string formatting to better address a modular approach.
 # Finish making sprites so I can import and start testing functionality.
+  # Ability graphics and objects/terrain.
 # Is there a way to call the object that the cursor is colliding with?  I can call objects instead of having to hard code in collisions.
-# Maybe set a variable that is determined by collision, and returns object.  Then can use (self, selection), where selection is the variable that calls objects.
-# Apparently I am using super.() completely wrong...  Probably should fix this. --> BaseClassName.__init__(self, args*)
-
+  # Used with for loop to call pawn in pawn_group.  Could be expanded to detect objects from different groups...?
 
 import pygame
 
 pygame.init()
-pygame.font.init()
 
 title_font = pygame.font.SysFont("Lucida Console", 17, False, False)
 console_font = pygame.font.SysFont("Lucida Console", 13, False, False)
-
-# from pygame_utilities import draw_text, sign
 
 version = 0.5
 # Statistics for window dimensions and tile definitions.
@@ -69,7 +64,7 @@ def make_sprite(filename):
 def draw_sprite(sprite):
     background.blit(sprite.image, sprite.rect)
 
-
+#Defines dimentions of board.  Used to determine where sprites can move or be placed. (Borders)
 def board_space(self):
     if 0 <= self.coords[0] <= 24 and 0 <= self.coords[1] <= 18:
         return True
@@ -77,7 +72,7 @@ def board_space(self):
         return False
 
 
-# Replace with function that returns true/false instead of global variable? Similar to board_space function
+# Used to detect if two objects are adjacent to eachother or not.
 def is_adjacent(self, other):
     x = (self.coords[0] - other.coords[0])
     y = (self.coords[1] - other.coords[1])
@@ -99,7 +94,6 @@ class Player(pygame.sprite.Sprite):
     def __init__(self, x, y):
         super(Player, self).__init__()
         self.images = []
-        # Insert animal forms in here
         self.images.append(load_image('spirit.png'))
         self.images.append(load_image('spiritstag.png'))
         self.images.append(load_image('spiritwolf.png'))
@@ -111,18 +105,17 @@ class Player(pygame.sprite.Sprite):
         self.mask = pygame.mask.from_surface(self.image)
         self.coords = (x, y)
 
-        # Player control flag
         self.isactive = True
         self.call_form()
 
-    # "Move" code, used to update sprites on the grid.  Should this be a Global variable???
+    # Update function that redraws sprite on movement, and refreshes sprite on form change.
     def update(self):
         self.image = self.images[self.index]
         self.rect.centerx = self.coords[0] * tile_size + self.rect.width / 2
         self.rect.centery = self.coords[1] * tile_size + self.rect.height / 2
 
     def call_form(self):
-        # Reverse method of detecting sprite to call.  FORM_ID should be base, then call on INDEX number to set sprite...
+        #Calls Form_ID and set appropriate sprite and form_id value for other functions to use.
         if self.form_id == ('spirit'):
             self.index = 0
         elif self.form_id == ('stag'):
@@ -149,8 +142,8 @@ class Player(pygame.sprite.Sprite):
         #if self.ability1 == ('Illuminate')
 
 
+    #Form changing code here!  Draws forms from array list, and sorts them in the order you have acquired them in.
     def invoke(self):
-        # Will have to manually input line breaks.  string format does not like \n and prints an invalid character in its place.
         if len(player.essence) == 1:
             console_scroll('You have no Aspects to invoke at this time.')
             player.isactive = True
@@ -167,7 +160,7 @@ class Player(pygame.sprite.Sprite):
 
         print ('FormID:', player.form_id)
 
-    # Code Look commands relating to player here.  Probably a way to store commands globally instead of per class.
+    #Look interactions to call on when player is targeted with "look"
     def look(self):
         if self.form_id == ('spirit'):
             console_scroll('You are an Aspect of Nature. You glow with a brilliant radiance.')
@@ -177,7 +170,7 @@ class Player(pygame.sprite.Sprite):
             console_scroll('You can also {0} over most terrain.'.format(self.trait))
 
         else:
-            console_scroll('You have invoked the blessing of the {}.'.format(self.form_id))
+            console_scroll('You have invoked the blessing of the {0}.'.format(self.form_id))
 
         if self.form_id == ('stag'):
             console_scroll(
@@ -194,16 +187,10 @@ class Player(pygame.sprite.Sprite):
                 'The {0} can use its {1} size to squeeze into tight spaces.  It can also {2} by other animals.'.format(
                     self.form_id, self.trait, self.ability1))
 
-            #def interact(self, other):
-            #if player.interact[1] = animal ### etc, to store ALL player interactions under player for clarity.
+#Spawns instance of player on board.  Must come before Cursor since Cursor uses player.coords to find location to spawn at.
+player = Player(12, 11)
 
-
-# Self.index to detect different animal forms.
-
-player = Player(6, 6)
-
-# def interact (self,other) ??? for specific interactive inputs [look] [use] etc?
-
+#Item Base class that all items will derive from.
 class Item(pygame.sprite.Sprite):
     default_layer = 2
     form_id = 'item'
@@ -277,7 +264,7 @@ class Food(Item):
         print ('Food has been placed on the grid.')
 
 
-class Cursor(pygame.sprite.Sprite):  #ADD DRAW CONDITIONS WHEN PLAYER PRESSES KEY, ALSO DISAPPEARS
+class Cursor(pygame.sprite.Sprite):
     coords = (player.coords)
     default_layer = 5
     def __init__(self, x, y):
@@ -293,6 +280,7 @@ class Cursor(pygame.sprite.Sprite):  #ADD DRAW CONDITIONS WHEN PLAYER PRESSES KE
         self.counter = 0
         self.maxcount = 12
 
+    #Cursor animation cycle
     def blink(self):
         self.counter += 1
         if self.counter == 12:
@@ -323,20 +311,15 @@ class Cursor(pygame.sprite.Sprite):  #ADD DRAW CONDITIONS WHEN PLAYER PRESSES KE
         print ('Cursor Mode:', cursor.alive())
 
 
-cursor = Cursor(player.coords[0], player.coords[1])
-
-
 class Animal(pygame.sprite.Sprite):
     default_layer = 4
     form_id = ('animal')
     greeting = 0
     coords = (0, 0)
-    #Look up Inheritance based classes for other animals.  Animal = Base class Wolf = Derived class that inherits from base
-    #class DerivedClassName(BaseClassName):
+
     def __init__(self, x, y):
         super(Animal, self).__init__()
         self.images = []
-        #Add other animal images here! Animal bones for dead animal, or animal sitting/laying?
         self.index = 0
         self.rect = pygame.Rect(0, 0, 32, 32)
         self.coords = (x, y)
@@ -370,7 +353,6 @@ class Stag(Animal):
         self.images = []
         self.images.append(load_image('npcstagsick.png'))
         self.images.append(load_image('npcstag.png'))
-        #Add other animal images here! Animal bones for dead animal, or animal sitting/laying?
         self.index = 0
 
         self.image = self.images[self.index]
@@ -451,17 +433,20 @@ class Wolf(Animal):
                 player.essence.append('wolf')
 
                 console_scroll('As a token of gratitude, the {0} has entreated its blessing to you.'.format(self.form_id))
-                console_scroll('You can now invoke the aspect of the {}!'.format(self.form_id))
+                console_scroll('You can now invoke the aspect of the {0}!'.format(self.form_id))
 
             elif self.greeting == 1:
-                console_scroll('You have already helped the {0}.  The {0} bows its head in gratitude.'.format(self.form_id))
                 console_scroll(
                     'In thanks for your help, the {0} also informs you of some food it has buried nearby.'.format(
                         self.form_id))
                 food.appear(4, 4)
+                self.greeting = 2
+
+            elif self.greeting == 2:
+                console_scroll('You have already helped the {0}.  The {0} bows its head in gratitude.'.format(self.form_id))
 
         elif not is_adjacent(self, player):
-            console_scroll('You are not close enough to interact with the {}.'.format(self.form_id))
+            console_scroll('You are not close enough to interact with the {0}.'.format(self.form_id))
 
 
 
@@ -513,7 +498,11 @@ class Rat(Animal):
                     self.form_id))
 
         elif not is_adjacent(self, player):
-                console_scroll('You are not close enough to interact with the {}.'.format(self.form_id))
+                console_scroll('You are not close enough to interact with the {0}.'.format(self.form_id))
+
+#Instances of non-player objects
+
+cursor = Cursor(player.coords[0], player.coords[1])
 
 food = Food(Food.coords[0], Food.coords[1])
 
@@ -531,10 +520,8 @@ arrow_keys = {pygame.K_LEFT: (-1, 0),
 
 cursor_keys = [pygame.K_a, pygame.K_s]
 
-#class display_HUD (x,y): ?
 
-
-#Test Board and HUD stuff
+#Blank grid & UI Sprites/sorting.
 testboard = make_sprite('grid.png')
 
 UI_sprites = Cursor(player.coords[0], player.coords[1])
@@ -542,11 +529,6 @@ UI_group = pygame.sprite.Group(UI_sprites)
 
 game_sprites = [player, pawn]
 game_sprites_group = pygame.sprite.LayeredUpdates(game_sprites)
-
-#Dsiplay HUD info @ coords.  Needs specifics still.
-#def display_HUD (x, y):
-
-#Font/String Library, with group...? (For text in text_group...)
 
 #Defines dimensions of the UI!  Use this for placing text within the surface area.
 ui_surface = pygame.Surface((800, 200))
@@ -557,7 +539,7 @@ ui_surface_pos.y = background.get_rect().bottom - 192
 #array for console line buffer
 console_lines = []
 
-
+#This is what prints messages to the on screen "console" space.
 def console_scroll(string):
     max_lines = 5
     console_lines.append(string)
@@ -590,7 +572,7 @@ def update_UI():
     title_pos.centerx = ui_surface.get_rect().centerx
     title_pos.centery = ui_surface.get_rect().bottom - 178
 
-    #These are the global actions, they do not change based on player form.
+    #Prints UI text to UI space.
     ui_actions01 = console_font.render(
         '''[a] Look  [s] Interact [d] Item  [f] Invoke   |         ''' + '[g] {0}   [Trait] {1}'.format(
             player.ability1, player.trait), 0, (255, 255, 255))
@@ -629,10 +611,9 @@ while runtime:
                         cursor.coords = (column, row)
                         cursor.update()
                     #Debug Coordinates Printed to Console
-                    print ('Cursor moved to: {}'.format(cursor.coords))
+                    print ('Cursor moved to: {0}'.format(cursor.coords))
                 if ev.type == pygame.KEYDOWN and ev.key == pygame.K_a:
-                    #Should I load in ALL "looks" here?  Seems like the best thing would be to have interacts stored in classes/different objects...
-                    #Ideally all "[ACTIONS]" and [OBJECTS] can be handled by scripting.
+                    #Collision detection for cursor to detect interactions
                     if pygame.sprite.collide_rect(cursor, player):
                         player.look()
                     else:
@@ -665,35 +646,36 @@ while runtime:
 
 
             #Invoke action form changes here
+            #When cursor is inactive and player does not have control (used to check for non selection prompts)
             if not cursor.alive():
-                #Change values to call from list...
-                #SET FORM_ID instead of CHANGING INDEX, USE FUNCTION TO THEN UPDATE SPRITE.
-                if ev.type == pygame.KEYDOWN and ev.key == pygame.K_1 and 'spirit' in player.essence:
-                    player.form_id = ('{}'.format(player.essence[0]))
+
+                #Conditionals for form changing.  Checks number of blessings in list and then adjusts accordingly.
+                if ev.type == pygame.KEYDOWN and ev.key == pygame.K_1 and len(player.essence) >= 1:
+                    player.form_id = ('{0}'.format(player.essence[0]))
                     player.call_form()
-                    console_scroll('You invoke the aspect of the {}.'.format(player.form_id))
+                    console_scroll('You invoke the aspect of the {0}.'.format(player.form_id))
                     player.isactive = True
 
                 elif ev.type == pygame.KEYDOWN and ev.key == pygame.K_2 and len(player.essence) >= 2:
-                    player.form_id = ('{}'.format(player.essence[1]))
+                    player.form_id = ('{0}'.format(player.essence[1]))
                     player.call_form()
-                    console_scroll('You invoke the aspect of the {}.'.format(player.form_id))
+                    console_scroll('You invoke the aspect of the {0}.'.format(player.form_id))
                     player.isactive = True
 
                 elif ev.type == pygame.KEYDOWN and ev.key == pygame.K_3 and len(player.essence) >= 3:
-                    player.form_id = ('{}'.format(player.essence[2]))
+                    player.form_id = ('{0}'.format(player.essence[2]))
                     player.call_form()
-                    console_scroll('You invoke the aspect of the {}.'.format(player.form_id))
+                    console_scroll('You invoke the aspect of the {0}.'.format(player.form_id))
                     player.isactive = True
 
                 elif ev.type == pygame.KEYDOWN and ev.key == pygame.K_4 and len(player.essence) >= 4:
-                    player.form_id = ('{}'.format(player.essence[3]))
+                    player.form_id = ('{0}'.format(player.essence[3]))
                     player.call_form()
-                    console_scroll('You invoke the aspect of the {}.'.format(player.form_id))
+                    console_scroll('You invoke the aspect of the {0}.'.format(player.form_id))
                     player.isactive = True
 
 
-        #If player has control of avatar NORMAL ACTIONS HERE
+        #If player is active use following inputs
         elif player.isactive:
 
             if ev.type == pygame.KEYDOWN:
@@ -716,8 +698,8 @@ while runtime:
                         player.update()
 
                     #Debug Coordinates Printed to Console              
-                    print('Player moved to: {}'.format(player_newCoords))
-                    print('Player is on board: {}'.format(board_space(player)))
+                    print('Player moved to: {0}'.format(player_newCoords))
+                    print('Player is on board: {0}'.format(board_space(player)))
 
                     #Spawns and sets "Cursor Mode"
                 if ev.type == pygame.KEYDOWN and ev.key in cursor_keys:
@@ -725,7 +707,6 @@ while runtime:
                         console_scroll('Look at what?')
                     if ev.key == pygame.K_s:
                         console_scroll('Interact with what?')
-                    #cursor function to draw cursor trigger
                     cursor.on()
 
                 if ev.type == pygame.KEYDOWN and ev.key == pygame.K_d:
@@ -733,10 +714,10 @@ while runtime:
                         console_scroll('You currently have no items in your inventory.')
                     else:
                         console_scroll('You currently have the following items:')
-                        console_scroll('{}'.format(''.join(player.inventory)))
+                        console_scroll('{0}'.format(' '.join(player.inventory)))
 
                 if ev.type == pygame.KEYDOWN and ev.key == pygame.K_f:
-                    #maybe show display with cursor to select icons, if display is up overwrite controls like cursor mode?
+                    #Triggers invoke prompt
                     player.isactive = False
                     player.invoke()
 
