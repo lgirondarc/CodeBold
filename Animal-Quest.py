@@ -83,7 +83,7 @@ def is_adjacent(self, other):
 
 
 class Player(pygame.sprite.Sprite):
-    default_layer = 5
+    layer = 5
     inventory = []
     essence = ['spirit']
     coords = (0, 0)
@@ -138,8 +138,14 @@ class Player(pygame.sprite.Sprite):
             self.ability1 = ('Sneak')
             self.trait = ('Small')
 
-    #def ability(self):
-        #if self.ability1 == ('Illuminate')
+    def ability_check(self):
+        if not self.base_id == ('spirit'):
+            if illuminate.alive():
+                illuminate.kill()
+                for pawn in pawn_group:
+                    illuminate.trigger(pawn)
+            else:
+                pass
 
 
     #Form changing code here!  Draws forms from array list, and sorts them in the order you have acquired them in.
@@ -188,11 +194,11 @@ class Player(pygame.sprite.Sprite):
                     self.base_id, self.trait, self.ability1))
 
 #Spawns instance of player on board.  Must come before Cursor since Cursor uses player.coords to find location to spawn at.
-player = Player(12, 11)
+player = Player(12, 9)
 
 #Item Base class that all items will derive from.
 class Item(pygame.sprite.Sprite):
-    default_layer = 2
+    layer = 2
     base_id = ('item')
     coords = (0, 0)
 
@@ -258,7 +264,7 @@ class Food(Item):
     def place(self, x, y):
         self.add(pawn_group)
         self.coords = (x, y)
-        self.add(game_sprites_group)
+        self.add(effect_sprites_group)
         self.update()
 
         print ('Food has been placed on the grid.')
@@ -266,7 +272,7 @@ class Food(Item):
 
 class Cursor(pygame.sprite.Sprite):
     coords = (player.coords[0], player.coords[1])
-    default_layer = 5
+    layer = 6
     def __init__(self, x, y):
         super(Cursor, self).__init__()
         self.images = []
@@ -291,8 +297,8 @@ class Cursor(pygame.sprite.Sprite):
         self.image = self.images[self.index]
 
     def update(self):
-        self.rect.centerx = self.coords[0] * tile_size + self.rect.width / 2
-        self.rect.centery = self.coords[1] * tile_size + self.rect.height / 2
+        self.rect.centerx = self.coords[0] * tile_size + (self.rect.width / 2) - 1
+        self.rect.centery = self.coords[1] * tile_size + (self.rect.height / 2) - 1
 
     def on(self):
         cursor.coords = player.coords
@@ -315,7 +321,7 @@ class Cursor(pygame.sprite.Sprite):
 
 class player_ability(pygame.sprite.Sprite):
     base_id = ('player_ability')
-    default_layer = 4
+    layer = 5
     coords = (0, 0)
 
     def __init__(self, x, y):
@@ -326,18 +332,9 @@ class player_ability(pygame.sprite.Sprite):
 
     def update(self):
         self.coords = player.coords
-        self.rect.centerx = player.coords[0] * tile_size + self.rect.width / 2
-        self.rect.centery = player.coords[1] * tile_size + self.rect.height / 2
-        print (self.coords[0], self.coords[1])
+        self.rect.centerx = player.coords[0] * tile_size + (tile_size / 2) - 1
+        self.rect.centery = player.coords[1] * tile_size + (tile_size / 2) - 1
 
-    def on(self, x, y):
-        self.add(game_sprites_group)
-        self.add(ability_group)
-        self.update()
-        print ('ability.on called')
-
-    def off(self):
-        player_ability.kill()
 
 class Illuminate(player_ability):
     base_id = ('illuminate')
@@ -357,18 +354,36 @@ class Illuminate(player_ability):
 
     def trigger(self, other):
         if illuminate.alive():
-            if self.in_range(self, other):
+            if self.in_range(other):
                 try:
                     other.flag_illuminate = True
-                    print ('[0].illuminate: [1]'.format(other, other.flag_illuminate))
                 except:
-                    return
+                    pass
+            else:
+                try:
+                    other.flag_illuminate = False
+                except:
+                    pass
+        elif not illuminate.alive():
+            try:
+                other.flag_illuminate = False
+            except:
+                pass
+
+    def toggle(self):
+        if not illuminate.alive():
+            #self.add(game_sprites_group)
+            self.add(effect_sprites_group)
+        else:
+            self.kill()
+
+
 
 #--- Critter classes here! ---
 
 class Animal(pygame.sprite.Sprite):
     flag_illuminate = False
-    default_layer = 4
+    layer = 4
     base_id = ('animal')
     greeting = 0
     coords = (0, 0)
@@ -433,15 +448,19 @@ class Stag(Animal):
         if is_adjacent(self, player):
 
             if self.greeting == 0:
-                console_scroll('The {0} seems to be at ease now, comforted by the light of your [Illuminate].'.format(
-                    self.base_id))
-                self.greeting = 1
-                self.index = 1
-                self.image = self.images[self.index]
-                player.essence.append('stag')
-                console_scroll(
-                    'In response to your aid, the {0} has entreated its blessing to you.'.format(self.base_id))
-                console_scroll('You can now invoke the aspect of the [stag]!'.format(self.base_id))
+                if self.flag_illuminate:
+                    console_scroll('The {0} seems to be at ease now, comforted by the light of your illuminate!'.format(
+                        self.base_id))
+                    self.greeting = 1
+                    self.index = 1
+                    self.image = self.images[self.index]
+                    player.essence.append('stag')
+                    console_scroll(
+                        'In response to your aid, the {0} has entreated its blessing to you.'.format(self.base_id))
+                    console_scroll('You can now invoke the aspect of the [stag]!'.format(self.base_id))
+
+                else:
+                    console_scroll ('The {0} eyes the darkness around it in terrified silence.'.format(self.base_id))
 
             elif self.greeting == 1:
                 console_scroll(
@@ -564,12 +583,13 @@ cursor = Cursor(player.coords[0], player.coords[1])
 
 food = Food(Food.coords[0], Food.coords[1])
 
-pawn = [Wolf(8, 12), Stag(12, 8), Rat(16, 12)]
+pawn = [Wolf(4, 12), Stag(12, 4), Rat(20, 12)]
 
 pawn_group = pygame.sprite.Group(pawn)
 
 #Array to funnel and kill all ability functions
-ability_group = []
+ability_sprites = []
+effect_sprites_group = pygame.sprite.Group(ability_sprites)
 
 
 #Movement library
@@ -588,8 +608,8 @@ testboard = make_sprite('grid.png')
 UI_sprites = Cursor(player.coords[0], player.coords[1])
 UI_group = pygame.sprite.Group(UI_sprites)
 
-game_sprites = [player, pawn]
-game_sprites_group = pygame.sprite.LayeredUpdates(game_sprites)
+game_sprites = [pawn, player]
+game_sprites_group = pygame.sprite.OrderedUpdates(game_sprites)
 
 #Defines dimensions of the UI!  Use this for placing text within the surface area.
 ui_surface = pygame.Surface((800, 200))
@@ -735,6 +755,8 @@ while runtime:
                     console_scroll('You invoke the aspect of the {0}.'.format(player.base_id))
                     player.isactive = True
 
+                #Turns off any active abilities when switching to a form that does not have them.
+                player.ability_check()
 
         #If player is active use following inputs
         elif player.isactive:
@@ -749,10 +771,13 @@ while runtime:
                     player.coords = player_newCoords
                     player.update()
 
-                    for pawn in pawn_group:
-                        if pygame.sprite.collide_rect(player, pawn):
-                            player.coords = (column, row)
-                            player.update()
+                    if not player.base_id == ('spirit'):
+                        for pawn in pawn_group:
+                            if pygame.sprite.collide_rect(player, pawn):
+                                player.coords = (column, row)
+                                player.update()
+                        else:
+                            pass
 
                     if board_space(player) == False:
                         player.coords = (column, row)
@@ -778,32 +803,41 @@ while runtime:
                         console_scroll('{0}'.format(' '.join(player.inventory)))
 
                 if ev.type == pygame.KEYDOWN and ev.key == pygame.K_f:
-                    #Triggers invoke prompt
-                    player.isactive = False
-                    player.invoke()
+
+                    #Global function to detect collisions???  It's used here & for cursor targeting.
+                    pawncollision = []
+
+                    for pawn in pawn_group:
+                        if pygame.sprite.collide_rect(player, pawn):
+                            pawncollision = True
+                    if pawncollision:
+                        console_scroll ('You cannot invoke a blessing while floating above something!')
+
+                    else:
+                        #Triggers invoke prompt
+                        player.isactive = False
+                        player.invoke()
 
                 if ev.type == pygame.KEYDOWN and ev. key == pygame.K_g:
                     if player.base_id == ('spirit'):
-                        illuminate.on(player.coords[0], player.coords[1])
+                        illuminate.toggle()
 
 
 
         #Updates sprite positions on grid.  Main loop, otherwise sprites spawn at (0, 0) and snap later.
         player.update()
-        illuminate.update()
 
-        try:
-            if illuminate in ability_group:
-                illuminate.update()
 
-        except:
-            pass
+
+        if illuminate in effect_sprites_group:
+            illuminate.update()
 
         if cursor in game_sprites_group:
             cursor.update()
 
         for pawn in pawn_group:
             pawn.update()
+            illuminate.trigger(pawn)
 
 
     #Graphics
@@ -811,6 +845,7 @@ while runtime:
     screen.blit(background, (0, 0))
     draw_sprite(testboard)
     background.blit(ui_surface, ui_surface_pos)
+    effect_sprites_group.draw(background)
     game_sprites_group.draw(background)
 
     update_UI()
