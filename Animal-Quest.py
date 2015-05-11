@@ -90,6 +90,7 @@ class Player(pygame.sprite.Sprite):
     base_id = ('spirit')
     ability1 = ('Illuminate')
     trait = ('Hover')
+    carry_id = []
 
     def __init__(self, x, y):
         super(Player, self).__init__()
@@ -271,6 +272,7 @@ class Food(Item):
 
 
 class Cursor(pygame.sprite.Sprite):
+    base_id = ('normal')
     coords = (player.coords[0], player.coords[1])
     layer = 6
     def __init__(self, x, y):
@@ -278,6 +280,7 @@ class Cursor(pygame.sprite.Sprite):
         self.images = []
         self.images.append(load_image('cursor1.png'))
         self.images.append(load_image('cursor2.png'))
+        self.images.append(load_image('ability_cursor.png'))
 
         self.index = 0
         self.image = self.images[self.index]
@@ -286,14 +289,31 @@ class Cursor(pygame.sprite.Sprite):
         self.counter = 0
         self.maxcount = 12
 
+    def check_id(self):
+        if self.base_id == ('normal'):
+            self.index = 0
+        if self.base_id == ('ability'):
+            self.index = 2
+        self.image = self.images[self.index]
+
     #Cursor animation cycle
     def blink(self):
         self.counter += 1
         if self.counter == 12:
-            self.index += 1
-            self.counter = 0
-        if self.index >= len(self.images):
-            self.index = 0
+            if self.index == 0:
+                self.index += 1
+                self.counter = 0
+            elif self.index == 1:
+                if self.base_id == ('normal'):
+                    self.index -= 1
+                    self.counter = 0
+                if self.base_id == ('ability'):
+                    self.index += 1
+                    self.counter = 0
+            elif self.index == 2:
+                self.index -= 1
+                self.counter = 0
+
         self.image = self.images[self.index]
 
     def update(self):
@@ -301,6 +321,7 @@ class Cursor(pygame.sprite.Sprite):
         self.rect.centery = self.coords[1] * tile_size + (self.rect.height / 2) - 1
 
     def on(self):
+        cursor.check_id()
         cursor.coords = player.coords
         cursor.add(game_sprites_group)
         player.isactive = False
@@ -311,10 +332,34 @@ class Cursor(pygame.sprite.Sprite):
     def off(self):
         cursor.kill()
         cursor.counter = 0
-        cursor.index = 0
         player.isactive = True
         print ('Active:', player.isactive)
         print ('Cursor Mode:', cursor.alive())
+
+    def ability_action(pawn):
+        if player.base_id == ('stag'):
+            if not player.carry_id:
+                pawncollision = []
+                pawnfetch = []
+                for pawn in pawn_group:
+                    if pygame.sprite.collide_rect(cursor, pawn):
+                        pawncollision = True
+                        pawnfetch = pawn
+
+                if pawncollision:
+                    try:
+                        pawn.carry()
+                        print (player.carry_id)
+                    except:
+                        console_scroll ('You cannot carry this object.')
+                        cursor.off()
+
+                else:
+                    console_scroll('There is nothing to carry here.')
+                    cursor.off()
+
+            if len (player.carry_id) == 1:
+                console_scroll ('Where would you like to place the {0}?'.format(player.carryid))
 
 
 #--- Ability Classes Here ---
@@ -378,6 +423,7 @@ class Illuminate(player_ability):
             self.kill()
 
 
+#STAG CARRY IS HANDLED AS A CURSOR FUNCTION VIA VARIABLES & CONTROLS, LINKS INTO INDIVIDUAL INSTANCE FUNCTIONS
 
 #--- Critter classes here! ---
 
@@ -522,6 +568,10 @@ class Wolf(Animal):
 
         elif not is_adjacent(self, player):
             console_scroll('You are not close enough to interact with the {0}.'.format(self.base_id))
+
+    def carry(self):
+        console_scroll ('You pick up and {0} the {1} upon your back.'.format(player.ability1, self.base_id))
+        player.carry_id = ('wolf')
 
 
 
@@ -681,23 +731,37 @@ while runtime:
         if player.isactive == False:
             #When cursor is present
             if cursor.alive():
-                if ev.type == pygame.KEYDOWN and ev.key in arrow_keys:
-                    board_space(cursor)
-                    (column, row) = cursor.coords
-                    (dx, dy) = arrow_keys[ev.key]
-                    cursor_newCoords = (column + dx, row + dy)
-                    #Moves player to new Coordinates
-                    cursor.coords = cursor_newCoords
-                    if board_space(cursor) == False:
-                        cursor.coords = (column, row)
-                        cursor.update()
-                    #Debug Coordinates Printed to Console
-                    print ('Cursor moved to: {0}'.format(cursor.coords))
-                if ev.type == pygame.KEYDOWN and ev.key == pygame.K_a:
-                    #Collision detection for cursor to detect interactions
-                    if pygame.sprite.collide_rect(cursor, player):
-                        player.look()
-                    else:
+                if cursor.base_id == ('normal'):
+                    if ev.type == pygame.KEYDOWN and ev.key in arrow_keys:
+                        board_space(cursor)
+                        (column, row) = cursor.coords
+                        (dx, dy) = arrow_keys[ev.key]
+                        cursor_newCoords = (column + dx, row + dy)
+                        #Moves player to new Coordinates
+                        cursor.coords = cursor_newCoords
+                        if board_space(cursor) == False:
+                            cursor.coords = (column, row)
+                            cursor.update()
+                        #Debug Coordinates Printed to Console
+                        print ('Cursor moved to: {0}'.format(cursor.coords))
+                    if ev.type == pygame.KEYDOWN and ev.key == pygame.K_a:
+                        #Collision detection for cursor to detect interactions
+                        if pygame.sprite.collide_rect(cursor, player):
+                            player.look()
+                        else:
+                            pawncollision = []
+                            pawnfetch = []
+                            for pawn in pawn_group:
+                                if pygame.sprite.collide_rect(cursor, pawn):
+                                    pawncollision = True
+                                    pawnfetch = pawn
+                            if pawncollision:
+                                pawnfetch.look()
+                            else:
+                                console_scroll('There is nothing to look at here.')
+                        cursor.off()
+
+                    if ev.type == pygame.KEYDOWN and ev.key == pygame.K_s:
                         pawncollision = []
                         pawnfetch = []
                         for pawn in pawn_group:
@@ -705,26 +769,35 @@ while runtime:
                                 pawncollision = True
                                 pawnfetch = pawn
                         if pawncollision:
-                            pawnfetch.look()
+                            pawnfetch.interact()
+
                         else:
-                            console_scroll('There is nothing to look at here.')
-                    cursor.off()
+                            console_scroll('There is nothing to interact with here.')
 
-                if ev.type == pygame.KEYDOWN and ev.key == pygame.K_s:
-                    pawncollision = []
-                    pawnfetch = []
-                    for pawn in pawn_group:
-                        if pygame.sprite.collide_rect(cursor, pawn):
-                            pawncollision = True
-                            pawnfetch = pawn
-                    if pawncollision:
-                        pawnfetch.interact()
+                        cursor.off()
 
-                    else:
-                        console_scroll('There is nothing to interact with here.')
+                #CURSOR ABILITIES HERE, DIG, CARRY, ETC
 
-                    cursor.off()
+                if cursor.base_id == ('ability'):
+                    if ev.type == pygame.KEYDOWN and ev.key in arrow_keys:
+                        board_space(cursor)
+                        (column, row) = cursor.coords
+                        (dx, dy) = arrow_keys[ev.key]
+                        cursor_newCoords = (column + dx, row + dy)
+                        #Moves player to new Coordinates
+                        cursor.coords = cursor_newCoords
+                        if board_space(cursor) == False:
+                            cursor.coords = (column, row)
+                            cursor.update()
+                        if not is_adjacent(cursor, player):
+                            cursor.coords = (column, row)
+                            cursor.update
+                        #Debug Coordinates Printed to Console
+                        print ('Cursor moved to: {0}'.format(cursor.coords))
 
+                    if ev.type == pygame.KEYDOWN and ev.key == pygame.K_g:
+                        cursor.ability_action()
+                        print ('Calling cursor.ability_action')
 
             #Invoke action form changes here
             #When cursor is inactive and player does not have control (used to check for non selection prompts)
@@ -789,6 +862,7 @@ while runtime:
 
                     #Spawns and sets "Cursor Mode"
                 if ev.type == pygame.KEYDOWN and ev.key in cursor_keys:
+                    cursor.base_id = ('normal')
                     if ev.key == pygame.K_a:
                         console_scroll('Look at what?')
                     if ev.key == pygame.K_s:
@@ -818,9 +892,14 @@ while runtime:
                         player.isactive = False
                         player.invoke()
 
+                #Ability Controls go here.
                 if ev.type == pygame.KEYDOWN and ev. key == pygame.K_g:
                     if player.base_id == ('spirit'):
                         illuminate.toggle()
+                    if player.base_id == ('stag'):
+                        console_scroll ('Pick up and carry what?')
+                        cursor.base_id = ('ability')
+                        cursor.on()
 
 
 
