@@ -85,7 +85,7 @@ def is_adjacent(self, other):
     else:
         return False
 
-def pack_mate_adjacent(self, other):
+def is_beside(self, other):
     x = (self.coords[0] - other.coords[0])
     y = (self.coords[1] - other.coords[1])
     if -1 <= x <= 1 and -1 <= y <= 1 and (x != 0 or y != 0):
@@ -698,12 +698,12 @@ class Wolf(Animal):
         elif not is_adjacent(self, player):
             console_scroll('You are not close enough to interact with the {0}.'.format(self.base_id))
 
+    #Checks if wolves are next to each other.
     def pack_mate_check(self, other):
-        print ('Pack mate searching...')
-        pack_mate_adjacent(self,other)
+        is_beside(self,other)
         adjacent_ids = []
         for pawn in pawn_group:
-            if pack_mate_adjacent(self, pawn):
+            if is_beside(self, pawn):
                 adjacent_ids.append(pawn.base_id)
             if ('wolf') in adjacent_ids:
                self.index = 1
@@ -990,8 +990,7 @@ while runtime:
                     (dx, dy) = arrow_keys[ev.key]
                     player_newCoords = (column + dx, row + dy)
                     #Moves player to new Coordinates
-                    player.coords = player_newCoords
-                    player.update()
+
 
                     if player.base_id == ('stag'):
                         for pawn in pawn_group:
@@ -1002,25 +1001,37 @@ while runtime:
                                 pawncollision = True
                                 pawnfetch = pawn
                             if pawncollision:
+                                print ('Object Collision Detected!')
                                 board_space(pawnfetch)
                                 (pawn_column, pawn_row) = pawnfetch.coords
                                 (pawn_dx, pawn_dy) = arrow_keys[ev.key]
                                 pawn_newCoords = (pawn_column + pawn_dx, pawn_row + pawn_dy)
 
-
                                 if not board_space(pawnfetch):
                                     pawnfetch.coords = (pawn_column - pawn_dx, pawn_row - pawn_dy)
 
-                                if pygame.sprite.collide_rect(pawn, pawn):
+                                for pawn in pawn_group:
+                                    is_beside(pawnfetch, pawn)
+                                    pawn_collide = pawn
+
+                                if pawn_newCoords == pawn_collide.coords:
+                                    print ('Objects pushed:')
                                     pawnfetch.coords = (pawn_column, pawn_row)
+                                    player.coords = (column,row)
 
+                                else:
+                                    pawnfetch.coords = pawn_newCoords
 
-
-                                pawnfetch.coords = pawn_newCoords
                                 pawnfetch.update()
 
+                            player.coords = player_newCoords
+                            player.update()
 
-                    elif not player.base_id == ('spirit'):
+                    else:
+                        player.coords = player_newCoords
+                        player.update()
+
+                    if not player.base_id == ('spirit'):
                         for pawn in pawn_group:
                             if pygame.sprite.collide_rect(player, pawn):
                                 player.coords = (column, row)
