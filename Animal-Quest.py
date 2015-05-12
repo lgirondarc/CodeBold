@@ -85,6 +85,13 @@ def is_adjacent(self, other):
     else:
         return False
 
+def pack_mate_adjacent(self, other):
+    x = (self.coords[0] - other.coords[0])
+    y = (self.coords[1] - other.coords[1])
+    if -1 <= x <= 1 and -1 <= y <= 1 and (x != 0 or y != 0):
+        return True
+    else:
+        return False
 
 class Player(pygame.sprite.Sprite):
     layer = 5
@@ -247,7 +254,7 @@ class Item(pygame.sprite.Sprite):
             console_scroll('You are not close enough to pick up the {}.'.format(self.base_id))
 
     def place(self, x, y):
-        self.add(item)
+        #self.add(item)
         self.add(item_group)
         self.coords = (x, y)
         self.update()
@@ -666,21 +673,21 @@ class Wolf(Animal):
         #Needs puzzle implemented and wolf interaction pre/post puzzle solve
         if is_adjacent(self, player):
 
-            if self.index == 1:
+            if self.index == 1 and self.greeting == 0:
                 console_scroll ('The wolves are much happier now that they have been reunited with each other.')
                 self.greeting = 1
-                player.essence.append('wolf')
-                console_scroll('As a token of gratitude, the wolves have entreated their blessing to you.'.format(self.base_id))
-                console_scroll('You can now invoke the aspect of the {0}!'.format(self.base_id))
-                console_scroll(
-                    'In thanks for your help, the wolves inform you of some food they have buried nearby.'.format(
-                        self.base_id))
-                food = Food (0, 0)
-                food.place(0, 0)
-                random_coords(food)
-                food.update()
-                food.hidden = True
-                self.greeting = 1
+                if not 'wolf' in player.essence:
+                    player.essence.append('wolf')
+                    console_scroll('As a token of gratitude, the wolves have entreated their blessing to you.'.format(self.base_id))
+                    console_scroll('You can now invoke the aspect of the {0}!'.format(self.base_id))
+                    console_scroll(
+                        'In thanks for your help, the wolves inform you of some food they have buried nearby.'.format(
+                            self.base_id))
+                    food = Food (0, 0)
+                    food.place(0, 0)
+                    random_coords(food)
+                    food.update()
+                    food.hidden = True
             elif self.index == 0:
                 console_scroll ('The {0} longs to be with its packmate.'.format(self.base_id))
 
@@ -693,15 +700,14 @@ class Wolf(Animal):
 
     def pack_mate_check(self, other):
         print ('Pack mate searching...')
-        is_adjacent(self,other)
+        pack_mate_adjacent(self,other)
         adjacent_ids = []
-        if is_adjacent:
-            for pawn in pawn_group:
-                if is_adjacent(self, pawn):
-                    adjacent_ids.append(pawn.base_id)
-                if ('wolf') in adjacent_ids:
-                   self.index = 1
-                   self.image = self.images[self.index]
+        for pawn in pawn_group:
+            if pack_mate_adjacent(self, pawn):
+                adjacent_ids.append(pawn.base_id)
+            if ('wolf') in adjacent_ids:
+               self.index = 1
+               self.image = self.images[self.index]
 
 
 
@@ -989,6 +995,7 @@ while runtime:
 
                     if player.base_id == ('stag'):
                         for pawn in pawn_group:
+                            pawn_detect = pawn.coords
                             pawncollision = []
                             pawnfetch = []
                             if pygame.sprite.collide_rect(player, pawn):
@@ -999,12 +1006,18 @@ while runtime:
                                 (pawn_column, pawn_row) = pawnfetch.coords
                                 (pawn_dx, pawn_dy) = arrow_keys[ev.key]
                                 pawn_newCoords = (pawn_column + pawn_dx, pawn_row + pawn_dy)
-                                pawnfetch.coords = pawn_newCoords
-                                pawnfetch.update()
+
 
                                 if not board_space(pawnfetch):
                                     pawnfetch.coords = (pawn_column - pawn_dx, pawn_row - pawn_dy)
-                                    pawnfetch.update()
+
+                                if pygame.sprite.collide_rect(pawn, pawn):
+                                    pawnfetch.coords = (pawn_column, pawn_row)
+
+
+
+                                pawnfetch.coords = pawn_newCoords
+                                pawnfetch.update()
 
 
                     elif not player.base_id == ('spirit'):
