@@ -990,10 +990,11 @@ while runtime:
                     (dx, dy) = arrow_keys[ev.key]
                     player_newCoords = (column + dx, row + dy)
                     #Moves player to new Coordinates
+                    player.coords = player_newCoords
 
 
                     if player.base_id == ('stag'):
-						pawncollision = []
+                        pawncollision = []
                         pawnfetch = []
                         for pawn in pawn_group:
                             if pygame.sprite.collide_rect(player, pawn):
@@ -1017,6 +1018,7 @@ while runtime:
 
                                 if not board_space(pawnfetch):
                                         pawnfetch.coords = (pawn_column - pawn_dx, pawn_row - pawn_dy)
+
                                 pawnfetch.update()
                         else:
                                 player.coords = player_newCoords
@@ -1024,7 +1026,6 @@ while runtime:
                         player.update()
 
                     else:
-                        player.coords = player_newCoords
                         player.update()
 
                     if not player.base_id == ('spirit'):
