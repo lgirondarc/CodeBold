@@ -1006,18 +1006,24 @@ while runtime:
                                 (pawn_column, pawn_row) = pawnfetch.coords
                                 (pawn_dx, pawn_dy) = arrow_keys[ev.key]
                                 pawn_newCoords = (pawn_column + pawn_dx, pawn_row + pawn_dy)
+
                                 pawnfetch.coords = pawn_newCoords #set and reverse if needed
-				player.coords = player_newCoords  #set and reverse if needed
-				for pawn in pawn_group:
-				    if pawn_newCoords == pawn.coords:
-					print ('Objects reverted:')
-					pawnfetch.coords = (pawn_column, pawn_row)
-					player.coords = (column,row)
-				if not board_space(pawnfetch):
+                                player.coords = player_newCoords  #set and reverse if needed
+
+                                for pawn in pawn_group:
+                                    if pawn_newCoords == pawn.coords:
+                                        print ('Objects reverted:')
+                                        pawnfetch.coords = (pawn_column, pawn_row)
+                                        player.coords = (column,row)
+
+                                if not board_space(pawnfetch):
                                     pawnfetch.coords = (pawn_column - pawn_dx, pawn_row - pawn_dy)
-				    player.coords = (column,row)
+                                    player.coords = (column,row)
+
                                 pawnfetch.update()
-			player.update()
+
+                            player.coords = player_newCoords
+                            player.update()
 
                     else:
                         player.coords = player_newCoords
