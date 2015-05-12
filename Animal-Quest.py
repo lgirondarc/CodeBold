@@ -20,6 +20,7 @@
   # Used with for loop to call pawn in pawn_group.  Could be expanded to detect objects from different groups...?
 
 import pygame
+import random
 
 pygame.init()
 
@@ -51,7 +52,6 @@ def load_image(filename):
     image = pygame.image.load(filename)
     return image
 
-
 def make_sprite(filename):
     sprite = pygame.sprite.Sprite()
     image = pygame.image.load(filename)
@@ -64,13 +64,17 @@ def make_sprite(filename):
 def draw_sprite(sprite):
     background.blit(sprite.image, sprite.rect)
 
+def random_coords(other):
+    x = random.randint(0, tile_rows)
+    y = random.randint(0, tile_columns)
+    other.coords = (x, y)
+
 #Defines dimentions of board.  Used to determine where sprites can move or be placed. (Borders)
 def board_space(self):
     if 0 <= self.coords[0] <= 24 and 0 <= self.coords[1] <= 18:
         return True
     else:
         return False
-
 
 # Used to detect if two objects are adjacent to eachother or not.
 def is_adjacent(self, other):
@@ -91,6 +95,7 @@ class Player(pygame.sprite.Sprite):
     ability1 = ('Illuminate')
     trait = ('Hover')
     carry_id = []
+    is_carrying = []
 
     def __init__(self, x, y):
         super(Player, self).__init__()
@@ -102,12 +107,11 @@ class Player(pygame.sprite.Sprite):
 
         self.index = 0
         self.image = self.images[self.index]
-        self.rect = pygame.Rect(0, 0, 32, 32)
+        self.rect = pygame.Rect(0, 0, 31, 31)
         self.mask = pygame.mask.from_surface(self.image)
         self.coords = (x, y)
 
         self.isactive = True
-        self.call_form()
 
     # Update function that redraws sprite on movement, and refreshes sprite on form change.
     def update(self):
@@ -116,6 +120,8 @@ class Player(pygame.sprite.Sprite):
         self.rect.centery = self.coords[1] * tile_size + self.rect.height / 2
 
     def call_form(self):
+        console_scroll('You invoke the aspect of the {0}.'.format(player.base_id))
+
         #Calls base_id and set appropriate sprite and base_id value for other functions to use.
         if self.base_id == ('spirit'):
             self.index = 0
@@ -123,6 +129,7 @@ class Player(pygame.sprite.Sprite):
             self.index = 1
         elif self.base_id == ('wolf'):
             self.index = 2
+            console_scroll ('You begin tracking with your acute senses.')
         elif self.base_id == ('rat'):
             self.index = 3
 
@@ -135,6 +142,7 @@ class Player(pygame.sprite.Sprite):
         if self.base_id == ('wolf'):
             self.ability1 = ('Dig')
             self.trait = ('Track & Smell')
+
         if self.base_id == ('rat'):
             self.ability1 = ('Sneak')
             self.trait = ('Small')
@@ -145,8 +153,14 @@ class Player(pygame.sprite.Sprite):
                 illuminate.kill()
                 for pawn in pawn_group:
                     illuminate.trigger(pawn)
-            else:
-                pass
+
+        if not self.base_id == ('wolf'):
+            if tracking.active:
+                tracking.active = False
+                console_scroll ('You stop tracking.')
+
+        elif self.base_id == ('wolf'):
+            tracking.active = True
 
 
     #Form changing code here!  Draws forms from array list, and sorts them in the order you have acquired them in.
@@ -199,6 +213,8 @@ player = Player(12, 9)
 
 #Item Base class that all items will derive from.
 class Item(pygame.sprite.Sprite):
+    flag_tracked = False
+    hidden = False
     layer = 2
     base_id = ('item')
     coords = (0, 0)
@@ -207,13 +223,16 @@ class Item(pygame.sprite.Sprite):
         super(Item, self).__init__()
         self.images = []
         self.index = 0
-        self.rect = pygame.Rect(0, 0, 32, 32)
+        self.rect = pygame.Rect(0, 0, 31, 31)
         self.coords = (x, y)
         print ('Base class method was called: Item')
 
     def look(self):
-        console_scroll('There is an {} here'.format(self.base_id))
+        console_scroll('There is an {0} here'.format(self.base_id))
 
+    def update(self):
+        self.rect.centerx = self.coords[0] * tile_size + self.rect.width / 2
+        self.rect.centery = self.coords[1] * tile_size + self.rect.height / 2
 
     def interact(self):
 
@@ -227,6 +246,14 @@ class Item(pygame.sprite.Sprite):
         elif not is_adjacent(self, player):
             console_scroll('You are not close enough to pick up the {}.'.format(self.base_id))
 
+    def place(self, x, y):
+        self.add(item)
+        self.add(item_group)
+        self.coords = (x, y)
+        self.update()
+
+        print ('{} has been placed on the grid.'.format(self.base_id))
+
 
 class Food(Item):
     base_id = ('Food')
@@ -237,38 +264,37 @@ class Food(Item):
         self.images.append(load_image('item_food.png'))
         self.index = 0
         self.image = self.images[self.index]
-        self.rect = pygame.Rect(0, 0, 32, 32)
+        self.rect = pygame.Rect(0, 0, 31, 31)
         self.coords = (x, y)
         print ('Derived class method called: Food')
 
-    def update(self):
-        self.rect.centerx = self.coords[0] * tile_size + self.rect.width / 2
-        self.rect.centery = self.coords[1] * tile_size + self.rect.height / 2
-
     def look(self):
-        console_scroll('There is {0} here.  It looks delicious.'.format(self.base_id))
+        if not self.hidden:
+            console_scroll('There is {0} here.  It looks delicious.'.format(self.base_id))
+
+        elif self.hidden:
+            if not player.base_id == ('wolf'):
+                console_scroll('There is nothing to look at here.')
+            else:
+                console_scroll('Your acute tracking senses tell you something is buried here.')
 
 
     def interact(self):
+        if not self.hidden:
 
-        is_adjacent(self, player)
+            if is_adjacent(self, player):
+                console_scroll('You pick up the {}.'.format(self.base_id))
+                player.inventory.append('food')
+                self.kill()
 
-        if is_adjacent(self, player):
-            console_scroll('You pick up the {}.'.format(self.base_id))
-            player.inventory.append('food')
-            self.kill()
+            elif not is_adjacent(self, player):
+                console_scroll('You are not close enough to pick up the {}.'.format(self.base_id))
 
-
-        elif not is_adjacent(self, player):
-            console_scroll('You are not close enough to pick up the {}.'.format(self.base_id))
-
-    def place(self, x, y):
-        self.add(pawn_group)
-        self.coords = (x, y)
-        self.add(effect_sprites_group)
-        self.update()
-
-        print ('Food has been placed on the grid.')
+        elif self.hidden:
+            if not player.base_id == ('wolf'):
+                console_scroll('There is nothing to interact with here.')
+            else:
+                console_scroll('Your acute tracking senses tell you something is buried here.')
 
 
 class Cursor(pygame.sprite.Sprite):
@@ -336,30 +362,11 @@ class Cursor(pygame.sprite.Sprite):
         print ('Active:', player.isactive)
         print ('Cursor Mode:', cursor.alive())
 
-    def ability_action(pawn):
+    def ability_action(self):
         if player.base_id == ('stag'):
-            if not player.carry_id:
-                pawncollision = []
-                pawnfetch = []
-                for pawn in pawn_group:
-                    if pygame.sprite.collide_rect(cursor, pawn):
-                        pawncollision = True
-                        pawnfetch = pawn
-
-                if pawncollision:
-                    try:
-                        pawn.carry()
-                        print (player.carry_id)
-                    except:
-                        console_scroll ('You cannot carry this object.')
-                        cursor.off()
-
-                else:
-                    console_scroll('There is nothing to carry here.')
-                    cursor.off()
-
-            if len (player.carry_id) == 1:
-                console_scroll ('Where would you like to place the {0}?'.format(player.carryid))
+            ability_carry(pawn)
+        if player.base_id == ('wolf'):
+            ability_dig(object)
 
 
 #--- Ability Classes Here ---
@@ -380,6 +387,10 @@ class player_ability(pygame.sprite.Sprite):
         self.rect.centerx = player.coords[0] * tile_size + (tile_size / 2) - 1
         self.rect.centery = player.coords[1] * tile_size + (tile_size / 2) - 1
 
+    def in_range(self, other):
+        if (abs(self.coords[0] - other.coords[0]) + abs(self.coords[1] - other.coords[1]) <= self.ability_range):
+            return True
+
 
 class Illuminate(player_ability):
     base_id = ('illuminate')
@@ -391,11 +402,6 @@ class Illuminate(player_ability):
         self.image = load_image('ability_illuminate.png')
         self.rect = self.image.get_rect()
         self.coords = (player.coords[0], player.coords[1])
-        print self.rect.width, self.rect.height
-
-    def in_range(self, other):
-        if (abs(self.coords[0] - other.coords[0]) + abs(self.coords[1] - other.coords[1]) <= self.ability_range):
-            return True
 
     def trigger(self, other):
         if illuminate.alive():
@@ -417,10 +423,119 @@ class Illuminate(player_ability):
 
     def toggle(self):
         if not illuminate.alive():
-            #self.add(game_sprites_group)
             self.add(effect_sprites_group)
         else:
             self.kill()
+
+def ability_carry(pawn):
+    if not player.is_carrying:
+        pawncollision = []
+        pawnfetch = []
+        for pawn in pawn_group:
+            if pygame.sprite.collide_rect(cursor, pawn):
+                pawncollision = True
+                pawnfetch = pawn
+        if pawncollision:
+            console_scroll ('You pick up and {0} the {1} upon your back.'.format(player.ability1, pawnfetch.base_id))
+            player.is_carrying = (pawnfetch.base_id)
+            player.carry_id = pawnfetch
+            print ('Carrying:', player.is_carrying)
+
+            for pawn in pawn_group:
+                game_sprites_group.remove(pawnfetch)
+                pawn_group.remove(pawnfetch)
+                cursor.off()
+
+        elif not pawncollision:
+            console_scroll('There is nothing to carry here.')
+            cursor.off()
+
+    elif player.is_carrying:
+        pawncollision = []
+        for pawn in pawn_group:
+            if pygame.sprite.collide_rect(cursor, pawn):
+                pawncollision = True
+            if pygame.sprite.collide_rect(cursor, player):
+                pawncollision = True
+        if pawncollision:
+            console_scroll('You cannot place the {0} here!'.format(player.is_carrying))
+
+        else:
+            console_scroll ('You place the {0} down beside you.'.format(player.is_carrying))
+            player.carry_id.coords = (cursor.coords[0], cursor.coords[1])
+            game_sprites_group.add(player.carry_id)
+            pawn_group.add(player.carry_id)
+            player.is_carrying = []
+            player.carry_id = []
+
+        cursor.off()
+
+def ability_dig(item):
+    objectcollision = []
+    object = []
+    object_id = []
+    for item in item_group:
+        if pygame.sprite.collide_rect(cursor, item):
+            objectcollision = True
+            object = item.base_id
+            object_id = item
+    if objectcollision:
+        if object_id.hidden:
+            console_scroll ('You dug something up: {0}!'.format(item.base_id))
+            item_group.add(object_id)
+            effect_sprites_group.add(object_id)
+            object_id.hidden = False
+        elif not object_id.hidden:
+            console_scroll ('The {0} is not buried.'.format(item.base_id))
+
+        cursor.off()
+    elif not objectcollision:
+        console_scroll ('You dig, but find nothing.')
+        cursor.off()
+
+class Ability_Track(player_ability):
+    active = False
+    ability_range = 3
+    coords = (player.coords[0], player.coords[1])
+
+    def __init__(self, x, y):
+        player_ability.__init__(self, x, y)
+        self.coords = (player.coords[0], player.coords[1])
+
+    def detect(self, other):
+        if tracking.active:
+            if self.in_range(other):
+                if not other.flag_tracked:
+                    try:
+                        other.flag_tracked = True
+                        print ('Tracking: {}'.format(other.base_id))
+                        console_scroll('Your acute senses detect the {0} nearby.'.format(other.base_id))
+                        if other.coords[0] > self.coords[0]:
+                            console_scroll ('The {0} is east of here.'.format(other.base_id))
+                        if other.coords[0] < self.coords[0]:
+                            console_scroll ('The {0} is west of here.'.format(other.base_id))
+                        if other.coords[1] > self.coords[1]:
+                            console_scroll ('The {0} is south of here.'.format(other.base_id))
+                        if other.coords[1] < self.coords[1]:
+                            console_scroll ('The {0} is north of here.'.format(other.base_id))
+                    except:
+                        pass
+                elif other.flag_tracked:
+                    pass
+            elif not self.in_range(other):
+                if other.flag_tracked:
+                    try:
+                        other.flag_tracked = False
+                        console_scroll ('The {0} you were tracking fades from your senses.'.format(other.base_id))
+                    except:
+                        pass
+                elif not other.flag_tracked:
+                    pass
+        if not tracking.active:
+            try:
+                other.flag_tracked = False
+            except:
+                pass
 
 
 #STAG CARRY IS HANDLED AS A CURSOR FUNCTION VIA VARIABLES & CONTROLS, LINKS INTO INDIVIDUAL INSTANCE FUNCTIONS
@@ -429,16 +544,18 @@ class Illuminate(player_ability):
 
 class Animal(pygame.sprite.Sprite):
     flag_illuminate = False
+    flag_tracked = False
     layer = 4
     base_id = ('animal')
     greeting = 0
     coords = (0, 0)
 
+
     def __init__(self, x, y):
         super(Animal, self).__init__()
         self.images = []
         self.index = 0
-        self.rect = pygame.Rect(0, 0, 32, 32)
+        self.rect = pygame.Rect(0, 0, 31, 31)
         self.coords = (x, y)
         print ('Base class method was called: Animal')
 
@@ -473,7 +590,7 @@ class Stag(Animal):
         self.index = 0
 
         self.image = self.images[self.index]
-        self.rect = pygame.Rect(0, 0, 32, 32)
+        self.rect = pygame.Rect(0, 0, 31, 31)
         self.coords = (x, y)
         print ('Derived class method was called: Stag.')
 
@@ -533,11 +650,9 @@ class Wolf(Animal):
             console_scroll(
                 'You look at the {0}. The {0} appears to have wounded its paw and cannot easily move.'.format(
                     self.base_id))
-            console_scroll(
-                'The {0} looks longingly at the rising moon.  If only it could get a better view.'.format(self.base_id))
 
         if self.index == 1:
-            console_scroll('The {0} seems to be much happier now that it can watch the moon rise!'.format(self.base_id))
+            console_scroll('The {0} seems happier now that it has been reunited with its pack mate!'.format(self.base_id))
 
     def interact(self):
         is_adjacent(self, player)
@@ -545,33 +660,42 @@ class Wolf(Animal):
         #Needs puzzle implemented and wolf interaction pre/post puzzle solve
         if is_adjacent(self, player):
 
-            if self.greeting == 0:
-                console_scroll(
-                    'The {0} bows its head in thanks to you, now the {0} can enjoy the view'.format(self.base_id))
+            if self.index == 1:
+                console_scroll ('The wolves are much happier now that they have been reunited with each other.')
                 self.greeting = 1
-                self.index = 1
-                self.image = self.images[self.index]
                 player.essence.append('wolf')
-
-                console_scroll('As a token of gratitude, the {0} has entreated its blessing to you.'.format(self.base_id))
+                console_scroll('As a token of gratitude, the wolves have entreated their blessing to you.'.format(self.base_id))
                 console_scroll('You can now invoke the aspect of the {0}!'.format(self.base_id))
+                console_scroll(
+                    'In thanks for your help, the wolves inform you of some food they have buried nearby.'.format(
+                        self.base_id))
+                food = Food (0, 0)
+                food.place(0, 0)
+                random_coords(food)
+                food.update()
+                food.hidden = True
+                self.greeting = 1
+            elif self.index == 0:
+                console_scroll ('The {0} longs to be with its packmate.'.format(self.base_id))
 
             elif self.greeting == 1:
-                console_scroll(
-                    'In thanks for your help, the {0} also informs you of some food it has buried nearby.'.format(
-                        self.base_id))
-                food.place(4, 4)
-                self.greeting = 2
-
-            elif self.greeting == 2:
-                console_scroll('You have already helped the {0}.  The {0} bows its head in gratitude.'.format(self.base_id))
+                console_scroll('You have already helped the {0} and its packmate.'
+                               'They bow their heads in gratitude.'.format(self.base_id))
 
         elif not is_adjacent(self, player):
             console_scroll('You are not close enough to interact with the {0}.'.format(self.base_id))
 
-    def carry(self):
-        console_scroll ('You pick up and {0} the {1} upon your back.'.format(player.ability1, self.base_id))
-        player.carry_id = ('wolf')
+        def pack_mate_check(self, other):
+            is_adjacent(self,other)
+            adjacent_ids = []
+            for pawn in pawn_group:
+                if pawn.isadjacent(self):\
+                    adjacent_ids.add(pawn)
+                if ('wolf') in adjacent_ids:
+                   self.index = 1
+
+                self.image = self.images[self.index]
+
 
 
 
@@ -629,17 +753,21 @@ class Rat(Animal):
 
 illuminate = Illuminate(player.coords[0], player.coords[1])
 
+tracking = Ability_Track(player.coords[0], player.coords[1])
+
 cursor = Cursor(player.coords[0], player.coords[1])
 
-food = Food(Food.coords[0], Food.coords[1])
+item = []
 
-pawn = [Wolf(4, 12), Stag(12, 4), Rat(20, 12)]
+item_group = pygame.sprite.Group(item)
+
+pawn = [Wolf(4, 12), Stag(12, 4), Rat(20, 12), Wolf(22, 3)]
 
 pawn_group = pygame.sprite.Group(pawn)
 
 #Array to funnel and kill all ability functions
-ability_sprites = []
-effect_sprites_group = pygame.sprite.Group(ability_sprites)
+effect_sprites = []
+effect_sprites_group = pygame.sprite.Group(effect_sprites)
 
 
 #Movement library
@@ -751,12 +879,18 @@ while runtime:
                         else:
                             pawncollision = []
                             pawnfetch = []
+
                             for pawn in pawn_group:
                                 if pygame.sprite.collide_rect(cursor, pawn):
                                     pawncollision = True
                                     pawnfetch = pawn
+                            for item in item_group:
+                                if pygame.sprite.collide_rect(cursor, item):
+                                    pawncollision = True
+                                    pawnfetch = item
                             if pawncollision:
                                 pawnfetch.look()
+
                             else:
                                 console_scroll('There is nothing to look at here.')
                         cursor.off()
@@ -768,6 +902,12 @@ while runtime:
                             if pygame.sprite.collide_rect(cursor, pawn):
                                 pawncollision = True
                                 pawnfetch = pawn
+
+
+                        for item in item_group:
+                            if pygame.sprite.collide_rect(cursor, item):
+                                pawncollision = True
+                                pawnfetch = item
                         if pawncollision:
                             pawnfetch.interact()
 
@@ -807,25 +947,21 @@ while runtime:
                 if ev.type == pygame.KEYDOWN and ev.key == pygame.K_1 and len(player.essence) >= 1:
                     player.base_id = ('{0}'.format(player.essence[0]))
                     player.call_form()
-                    console_scroll('You invoke the aspect of the {0}.'.format(player.base_id))
                     player.isactive = True
 
                 elif ev.type == pygame.KEYDOWN and ev.key == pygame.K_2 and len(player.essence) >= 2:
                     player.base_id = ('{0}'.format(player.essence[1]))
                     player.call_form()
-                    console_scroll('You invoke the aspect of the {0}.'.format(player.base_id))
                     player.isactive = True
 
                 elif ev.type == pygame.KEYDOWN and ev.key == pygame.K_3 and len(player.essence) >= 3:
                     player.base_id = ('{0}'.format(player.essence[2]))
                     player.call_form()
-                    console_scroll('You invoke the aspect of the {0}.'.format(player.base_id))
                     player.isactive = True
 
                 elif ev.type == pygame.KEYDOWN and ev.key == pygame.K_4 and len(player.essence) >= 4:
                     player.base_id = ('{0}'.format(player.essence[3]))
                     player.call_form()
-                    console_scroll('You invoke the aspect of the {0}.'.format(player.base_id))
                     player.isactive = True
 
                 #Turns off any active abilities when switching to a form that does not have them.
@@ -844,13 +980,31 @@ while runtime:
                     player.coords = player_newCoords
                     player.update()
 
-                    if not player.base_id == ('spirit'):
+                    if player.base_id == ('stag'):
+                        for pawn in pawn_group:
+                            pawncollision = []
+                            pawnfetch = []
+                            if pygame.sprite.collide_rect(player, pawn):
+                                pawncollision = True
+                                pawnfetch = pawn
+                            if pawncollision:
+                                board_space(pawnfetch)
+                                (pawn_column, pawn_row) = pawnfetch.coords
+                                (pawn_dx, pawn_dy) = arrow_keys[ev.key]
+                                pawn_newCoords = (pawn_column + pawn_dx, pawn_row + pawn_dy)
+                                pawnfetch.coords = pawn_newCoords
+                                pawnfetch.update()
+
+                                if not board_space(pawnfetch):
+                                    pawnfetch.coords = (pawn_column - pawn_dx, pawn_row - pawn_dy)
+                                    pawnfetch.update()
+
+
+                    elif not player.base_id == ('spirit'):
                         for pawn in pawn_group:
                             if pygame.sprite.collide_rect(player, pawn):
                                 player.coords = (column, row)
                                 player.update()
-                        else:
-                            pass
 
                     if board_space(player) == False:
                         player.coords = (column, row)
@@ -884,21 +1038,36 @@ while runtime:
                     for pawn in pawn_group:
                         if pygame.sprite.collide_rect(player, pawn):
                             pawncollision = True
+
                     if pawncollision:
                         console_scroll ('You cannot invoke a blessing while floating above something!')
 
-                    else:
+                    if player.is_carrying:
+                        console_scroll ('You cannot shift forms while carrying an object!')
+
+                    elif not pawncollision:
                         #Triggers invoke prompt
                         player.isactive = False
                         player.invoke()
 
                 #Ability Controls go here.
                 if ev.type == pygame.KEYDOWN and ev. key == pygame.K_g:
+                    cursor.base_id = ('ability')
+
                     if player.base_id == ('spirit'):
                         illuminate.toggle()
+
                     if player.base_id == ('stag'):
-                        console_scroll ('Pick up and carry what?')
-                        cursor.base_id = ('ability')
+                        print ('Carrying: {0} | ID: {1}'.format(player.is_carrying, player.carry_id))
+                        if not player.is_carrying:
+                            console_scroll ('Pick up and carry what?')
+                        elif player.is_carrying:
+                            console_scroll ('Place the {0} where?'.format(player.is_carrying))
+                        cursor.on()
+
+                    if player.base_id == ('wolf'):
+                        print ('Digging Mode Active')
+                        console_scroll ('Dig where?')
                         cursor.on()
 
 
@@ -906,10 +1075,19 @@ while runtime:
         #Updates sprite positions on grid.  Main loop, otherwise sprites spawn at (0, 0) and snap later.
         player.update()
 
+        for item in item_group:
+            item.update()
+
+        if tracking.alive:
+            tracking.update()
+            for item in item_group:
+                tracking.detect(item)
+            for pawn in pawn_group:
+                tracking.detect(pawn)
 
 
-        if illuminate in effect_sprites_group:
-            illuminate.update()
+        for effect_sprites in effect_sprites_group:
+            effect_sprites.update()
 
         if cursor in game_sprites_group:
             cursor.update()
