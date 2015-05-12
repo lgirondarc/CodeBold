@@ -993,14 +993,13 @@ while runtime:
 
 
                     if player.base_id == ('stag'):
+						pawncollision = []
+                        pawnfetch = []
                         for pawn in pawn_group:
-                            pawn_detect = pawn.coords
-                            pawncollision = []
-                            pawnfetch = []
                             if pygame.sprite.collide_rect(player, pawn):
                                 pawncollision = True
                                 pawnfetch = pawn
-                            if pawncollision:
+                        if pawncollision:
                                 print ('Object Collision Detected!')
                                 board_space(pawnfetch)
                                 (pawn_column, pawn_row) = pawnfetch.coords
@@ -1010,21 +1009,19 @@ while runtime:
                                 pawnfetch.coords = pawn_newCoords #set and reverse if needed
                                 player.coords = player_newCoords  #set and reverse if needed
 
-                                #for pawn in pawn_group:
-                                    #if pawn_newCoords == pawn.coords:
-                                        #print ('Objects reverted:')
-                                        #pawnfetch.coords = (pawn_column, pawn_row)
-                                        #player.coords = (column,row)
+                                for pawn in pawn_group:
+                                        if pawn_newCoords == pawn.coords:
+                                                print ('Objects reverted:')
+                                                pawnfetch.coords = (pawn_column, pawn_row)
+                                                player.coords = (column,row)
 
                                 if not board_space(pawnfetch):
-                                    pawnfetch.coords = (pawn_column - pawn_dx, pawn_row - pawn_dy)
-
+                                        pawnfetch.coords = (pawn_column - pawn_dx, pawn_row - pawn_dy)
                                 pawnfetch.update()
-
-                            else:
+                        else:
                                 player.coords = player_newCoords
 
-                            player.update()
+                        player.update()
 
                     else:
                         player.coords = player_newCoords
