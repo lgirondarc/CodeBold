@@ -33,7 +33,7 @@ pygame.display.set_caption('Animal Quest v %s' % version)
 window_width = 800
 window_height = 600
 tile_size = 32
-tile_rows = 25
+tile_rows = 24
 tile_columns = 18
 ui_height = 200
 
@@ -94,7 +94,7 @@ def is_beside(self, other):
         return False
 
 class Player(pygame.sprite.Sprite):
-    layer = 5
+    default_layer = 5
     inventory = []
     essence = ['spirit']
     coords = (0, 0)
@@ -222,7 +222,7 @@ player = Player(12, 9)
 class Item(pygame.sprite.Sprite):
     flag_tracked = False
     hidden = False
-    layer = 2
+    default_layer = 2
     base_id = ('item')
     coords = (0, 0)
 
@@ -307,7 +307,7 @@ class Food(Item):
 class Cursor(pygame.sprite.Sprite):
     base_id = ('normal')
     coords = (player.coords[0], player.coords[1])
-    layer = 6
+    default_layer = 6
     def __init__(self, x, y):
         super(Cursor, self).__init__()
         self.images = []
@@ -380,7 +380,7 @@ class Cursor(pygame.sprite.Sprite):
 
 class player_ability(pygame.sprite.Sprite):
     base_id = ('player_ability')
-    layer = 5
+    default_layer = 5
     coords = (0, 0)
 
     def __init__(self, x, y):
@@ -552,7 +552,7 @@ class Ability_Track(player_ability):
 class Animal(pygame.sprite.Sprite):
     flag_illuminate = False
     flag_tracked = False
-    layer = 4
+    default_layer = 4
     base_id = ('animal')
     greeting = 0
     coords = (0, 0)
@@ -800,7 +800,7 @@ UI_sprites = Cursor(player.coords[0], player.coords[1])
 UI_group = pygame.sprite.Group(UI_sprites)
 
 game_sprites = [pawn, player]
-game_sprites_group = pygame.sprite.OrderedUpdates(game_sprites)
+game_sprites_group = pygame.sprite.LayeredUpdates(game_sprites)
 
 #Defines dimensions of the UI!  Use this for placing text within the surface area.
 ui_surface = pygame.Surface((800, 200))
@@ -991,7 +991,7 @@ while runtime:
                     player_newCoords = (column + dx, row + dy)
                     #Moves player to new Coordinates
                     player.coords = player_newCoords
-
+                    player.update()
 
                     if player.base_id == ('stag'):
                         pawncollision = []
@@ -1010,9 +1010,10 @@ while runtime:
                                 pawnfetch.coords = pawn_newCoords #set and reverse if needed
                                 player.coords = player_newCoords  #set and reverse if needed
 
+                                #Prevents pawns from overlapping by blocking movement of both pawns & player
                                 for pawn in pawn_group:
-                                        if pawn_newCoords == pawn.coords:
-                                                print ('Objects reverted:')
+                                        if (pawn_newCoords == pawn.coords) and (pawnfetch is not pawn):
+                                                print ('Objects reverted:', pawnfetch.base_id, pawn.base_id)
                                                 pawnfetch.coords = (pawn_column, pawn_row)
                                                 player.coords = (column,row)
 
@@ -1020,13 +1021,6 @@ while runtime:
                                         pawnfetch.coords = (pawn_column - pawn_dx, pawn_row - pawn_dy)
 
                                 pawnfetch.update()
-                        else:
-                                player.coords = player_newCoords
-
-                        player.update()
-
-                    else:
-                        player.update()
 
                     if not player.base_id == ('spirit'):
                         for pawn in pawn_group:
