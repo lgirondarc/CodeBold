@@ -594,6 +594,7 @@ class Stag(Animal):
         self.coords = (x, y)
         print ('Derived class method was called: Stag.')
 
+
     def look(self):
         console_scroll('You look at {0}.'.format(self.base_id))
         if self.greeting == 0:
@@ -645,6 +646,11 @@ class Wolf(Animal):
 
         print ('Derived class method was called: Wolf.')
 
+    def update(self):
+        self.rect.centerx = self.coords[0] * tile_size + self.rect.width / 2
+        self.rect.centery = self.coords[1] * tile_size + self.rect.height / 2
+        self.pack_mate_check(pawn)
+
     def look(self):
         if self.index == 0:
             console_scroll(
@@ -685,16 +691,17 @@ class Wolf(Animal):
         elif not is_adjacent(self, player):
             console_scroll('You are not close enough to interact with the {0}.'.format(self.base_id))
 
-        def pack_mate_check(self, other):
-            is_adjacent(self,other)
-            adjacent_ids = []
+    def pack_mate_check(self, other):
+        print ('Pack mate searching...')
+        is_adjacent(self,other)
+        adjacent_ids = []
+        if is_adjacent:
             for pawn in pawn_group:
-                if pawn.isadjacent(self):\
-                    adjacent_ids.add(pawn)
+                if is_adjacent(self, pawn):
+                    adjacent_ids.append(pawn.base_id)
                 if ('wolf') in adjacent_ids:
                    self.index = 1
-
-                self.image = self.images[self.index]
+                   self.image = self.images[self.index]
 
 
 
